@@ -2,10 +2,11 @@
 import typer
 import uvicorn
 from loguru import logger
+
 from api import app
 
 
-def main(
+def cli_app(
     config: str = typer.Option("mcp-config.json", "--config", help="Path to MCP config JSON file"),
     host: str = typer.Option("0.0.0.0", "--host", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
@@ -24,6 +25,8 @@ def main(
     # Start the server
     uvicorn.run("api:app", host=host, port=port, reload=reload)
 
+def main():
+    typer.run(cli_app)
 
 if __name__ == "__main__":
-    typer.run(main)
+    main()

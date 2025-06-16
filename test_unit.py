@@ -3,10 +3,11 @@ Unit tests that can run in GitHub Actions (no external services required)
 Run with: uv run pytest test_unit.py -v
 """
 import json
-import tempfile
 import os
-import sys
+import subprocess
+import tempfile
 from pathlib import Path
+
 
 def test_config_loading():
     """Test that configuration files are loaded correctly"""
@@ -110,3 +111,10 @@ def test_example_config_structure():
             assert "command" in server_config
             assert "args" in server_config
             assert isinstance(server_config["args"], list)
+
+def test_script_installed():
+    try:
+        result = subprocess.run(["ollama-mcp-bridge", "--help"])
+        assert result.returncode == 0
+    except Exception as e:
+        assert False, f"Subprocess call failed. Is the script installed?, {e}"

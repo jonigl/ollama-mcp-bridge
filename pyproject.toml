@@ -32,7 +32,7 @@ test = [
 ]
 
 [project.scripts]
-ollama-mcp-bridge = "main:cli_app"
+ollama-mcp-bridge = "main:main"
 
 [build-system]
 requires = ["hatchling"]
