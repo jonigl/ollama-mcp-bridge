@@ -1,6 +1,6 @@
 <p align="center">
 
-  <img src="./misc/ollama-mcp-bridge-logo-512.png" width="256" />
+  <img src="https://github.com/jonigl/ollama-mcp-bridge/raw/main/misc/ollama-mcp-bridge-logo-512.png" width="256" />
 </p>
 <p align="center">
 <i>Provides an API layer in front of the Ollama API, seamlessly adding tools from multiple MCP servers so every Ollama request can access all connected tools transparently.</i>

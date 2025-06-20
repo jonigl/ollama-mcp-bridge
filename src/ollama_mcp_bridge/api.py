@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 import httpx
 
-from mcp_manager import MCPManager
-from services.proxy_service import ProxyService
+from .mcp_manager import MCPManager
+from .proxy_service import ProxyService
 
 # Global services - will be initialized in lifespan
 mcp_manager: MCPManager = None

@@ -4,7 +4,7 @@
       "command": "uv",
       "args": [
         "--directory",
-        ".",
+        "mcp-servers-config",
         "run",
         "mock-weather-mcp-server.py"
       ],

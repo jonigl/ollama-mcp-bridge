@@ -1,12 +1,17 @@
 """
 Unit tests that can run in GitHub Actions (no external services required)
-Run with: uv run pytest test_unit.py -v
+Run with: uv run pytest tests/test_unit.py -v
 """
 import json
 import os
 import subprocess
 import tempfile
+import sys
 from pathlib import Path
+
+# Add src directory to path for testing when package is not installed
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 
 def test_config_loading():
@@ -38,7 +43,13 @@ def test_config_loading():
 
 def test_mcp_manager_initialization():
     """Test MCPManager can be initialized"""
-    from mcp_manager import MCPManager
+    try:
+        # Try importing from package if installed
+        from ollama_mcp_bridge.mcp_manager import MCPManager
+    except ImportError:
+        # If package not installed, try importing from src
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from ollama_mcp_bridge.mcp_manager import MCPManager
 
     # Test initialization
     manager = MCPManager()
@@ -73,31 +84,39 @@ def test_tool_definition_structure():
 
 def test_project_structure():
     """Test that required project files exist"""
-    project_root = Path(__file__).parent
+    root_path = Path(__file__).parent.parent
+    src_root = root_path / "src" / "ollama_mcp_bridge"
 
     required_files = [
         "main.py",
         "api.py",
         "mcp_manager.py",
-        "pyproject.toml",
-        "mcp-config.json"
+        "utils.py",
+        "proxy_service.py",
     ]
 
     for file_name in required_files:
-        file_path = project_root / file_name
+        file_path = src_root / file_name
         assert file_path.exists(), f"Required file {file_name} not found"
 
 def test_imports():
     """Test that all modules can be imported without errors"""
     try:
-        import api        
-        import mcp_manager
+        # Ensure src is in path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+        # Import modules, using them to avoid unused import warnings
+        from ollama_mcp_bridge import api, mcp_manager, utils, proxy_service
+        assert api
+        assert mcp_manager
+        assert utils
+        assert proxy_service
     except ImportError as e:
         assert False, f"Import failed: {e}"
 
 def test_example_config_structure():
     """Test that the example config file has the correct structure"""
-    config_path = Path(__file__).parent / "mcp-config.json"
+    config_path = Path(__file__).parent.parent / "mcp-servers-config" / "mcp-config.json"
 
     if config_path.exists():
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -107,14 +126,14 @@ def test_example_config_structure():
         assert isinstance(config["mcpServers"], dict)
 
         # Check each server has required fields
-        for server_name, server_config in config["mcpServers"].items():
+        for _, server_config in config["mcpServers"].items():
             assert "command" in server_config
             assert "args" in server_config
             assert isinstance(server_config["args"], list)
 
 def test_script_installed():
     try:
-        result = subprocess.run(["ollama-mcp-bridge", "--help"])
+        result = subprocess.run(["ollama-mcp-bridge", "--help"], check=False)
         assert result.returncode == 0
-    except Exception as e:
-        assert False, f"Subprocess call failed. Is the script installed?, {e}"
+    except (FileNotFoundError, subprocess.SubprocessError) as e:
+        assert False, f"Subprocess call failed. Is the script installed? {e}"

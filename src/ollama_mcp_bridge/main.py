@@ -2,14 +2,13 @@
 import typer
 import uvicorn
 from loguru import logger
-import httpx
 
-from api import app
-from utils import check_ollama_health
+from ollama_mcp_bridge.api import app
+from ollama_mcp_bridge.utils import check_ollama_health
 
 
 def cli_app(
-    config: str = typer.Option("mcp-config.json", "--config", help="Path to MCP config JSON file"),
+    config: str = typer.Option("./mcp-servers-config/mcp-config.json", "--config", help="Path to MCP config JSON file"),
     host: str = typer.Option("0.0.0.0", "--host", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
     ollama_url: str = typer.Option("http://localhost:11434", "--ollama-url", help="Ollama server URL"),
@@ -34,9 +33,10 @@ def cli_app(
     logger.info("  • POST /api/chat - Ollama-compatible chat with MCP tools")
     logger.info("  • GET /health - Health check and status")
     logger.info("  • GET /docs - Swagger UI (API documentation)")
-    uvicorn.run("api:app", host=host, port=port, reload=reload)
+    uvicorn.run("ollama_mcp_bridge.api:app", host=host, port=port, reload=reload)
 
 def main():
+    """Main entry point for the CLI application"""
     typer.run(cli_app)
 
 if __name__ == "__main__":
