@@ -1,12 +1,12 @@
 """FastAPI application"""
 from contextlib import asynccontextmanager
 from typing import Dict, Any
-from fastapi import FastAPI, HTTPException, Body, status
+from fastapi import FastAPI, HTTPException, Body, status, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import httpx
 from mcp_manager import MCPManager
-from utils import check_ollama_health_async
+from utils import check_ollama_health_async, proxy_request
 
 # Global manager - will be initialized in lifespan
 mcp_manager: MCPManager = None
@@ -96,3 +96,24 @@ async def chat(
     except Exception as e:
         logger.error(f"/api/chat failed: {e}")
         raise HTTPException(status_code=500, detail=f"/api/chat failed: {str(e)}") from e
+
+
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"], 
+               summary="Transparent proxy", description="Transparent proxy to any Ollama endpoint.")
+async def proxy_to_ollama(
+    request: Request,
+    path_name: str
+):
+    """
+    Transparent proxy for all other Ollama endpoints.
+    """
+    if not mcp_manager:
+        raise HTTPException(status_code=503, detail="MCP manager not initialized")
+    
+    return await proxy_request(
+        target_url=mcp_manager.ollama_url,
+        request=request,
+        path=path_name,
+        check_health=True,
+        ollama_url=mcp_manager.ollama_url
+    )
