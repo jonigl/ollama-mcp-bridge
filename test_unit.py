@@ -46,7 +46,8 @@ def test_mcp_manager_initialization():
     # Test initial state
     assert len(manager.sessions) == 0
     assert len(manager.all_tools) == 0
-    assert manager.ollama_client is not None
+    assert hasattr(manager, "http_client")
+    assert hasattr(manager, "ollama_url")
 
 def test_tool_definition_structure():
     """Test that tool definitions have the expected structure"""
@@ -89,9 +90,8 @@ def test_project_structure():
 def test_imports():
     """Test that all modules can be imported without errors"""
     try:
-        import api
+        import api        
         import mcp_manager
-        assert True  # If we get here, imports worked
     except ImportError as e:
         assert False, f"Import failed: {e}"
 

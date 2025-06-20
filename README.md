@@ -3,7 +3,7 @@
   <img src="./misc/ollama-mcp-bridge-logo-512.png" width="256" />
 </p>
 <p align="center">
-<i>An API service that bridges multiple Model Context Protocol (MCP) servers with Ollama, providing unified access to tools across all connected servers for enhanced AI model interactions.</i>
+<i>Provides an API layer in front of the Ollama API, seamlessly adding tools from multiple MCP servers so every Ollama request can access all connected tools transparently.</i>
 </p>
 
 # Ollama MCP Bridge
@@ -23,6 +23,8 @@
 - 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
+- 🌊 **Streaming Responses**: Supports incremental streaming of responses to clients
+- 🤔 **Thinking Mode**: Proxies intermediate "thinking" messages from Ollama and MCP tools
 
 
 ## Requirements
@@ -48,13 +50,24 @@ ollama serve
 python main.py
 ```
 
+If you use uv, you can also install the project in editable mode:
+
+```bash
+# Install the project in editable mode
+# This allows you to modify the code without reinstalling
+uv tool install --editable .
+# Run it like this:
+ollama-mcp-bridge
+```
+
+
 ## How It Works
 
 1. **Startup**: All MCP servers defined in the configuration are loaded and connected
 2. **Tool Collection**: Tools from all servers are collected and made available to Ollama
-3. **Query Processing**: When a query is received:
-   - The query is sent to Ollama with all available tools
-   - If Ollama decides to use tools, those calls are executed via the appropriate MCP servers
+3. **Chat Completion Request**: When a chat completion request is received:
+  - The request is forwarded to Ollama along with the list of all available tools
+  - If Ollama chooses to invoke any tools, those tool calls are executed through the corresponding MCP servers
    - Tool responses are fed back to Ollama
    - The final response (with tool results integrated) is returned to the client
 4. **Logging**: All operations are logged using loguru for debugging and monitoring
@@ -110,8 +123,14 @@ python main.py --ollama-url http://192.168.1.100:11434
 python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
 ```
 
+> [!TIP]
+> If installing with `uv`, you can run the bridge directly using:
+> ```bash
+> ollama-mcp-bridge --config /path/to/custom-config.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
+> ```
+
 > [!NOTE]
-> This bridge does not currently support streaming responses or thinking mode. All responses are returned as complete messages after tool processing is finished.
+> This bridge supports both streaming responses and thinking mode. You receive incremental responses as they are generated, with tool calls and intermediate thinking messages automatically proxied between Ollama and all connected MCP tools.
 
 ### CLI Options
 - `--config`: Path to MCP configuration file (default: `mcp-config.json`)
@@ -121,67 +140,44 @@ python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http
 
 ### API Usage
 
-The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
+The API is available at `http://localhost:8000`.
 
-#### API Endpoints
+- **Swagger UI docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Ollama-compatible endpoints:**
+  - `POST /api/chat` — Chat endpoint (same as Ollama API, but with MCP tool support)
+- **Health check:**
+  - `GET /health`
 
-**Health Check**
+This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every request. You can use your existing Ollama clients and libraries, just point them to this bridge instead of your Ollama server.
+
+### Example: Chat
 ```bash
-GET /health
-```
-Returns status and number of available tools.
-
-**Send Query**
-```bash
-POST /query
-{
-  "query": "What's the weather like in Paris?",
-  "model": "qwen3:0.6b"  # optional, defaults to qwen3:0.6b
-}
-```
-
-Response:
-```json
-{
-  "response": "Based on the weather data, Paris currently has..."
-}
-```
-
-The model automatically has access to all tools from all connected servers. Tool calls are processed automatically and their results are integrated into the final response.
-
-## API Examples
-
-### Using curl
-
-```bash
-# Health check
-curl -X GET "http://localhost:8000/health"
-
-# Send query (model has access to all tools)
-curl -X POST "http://localhost:8000/query" \
+curl -N -X POST http://localhost:8000/api/chat \
+  -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What tools do you have available? Then check the weather in Paris.",
-    "model": "qwen3:0.6b"
+    "model": "qwen3:0.6b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a weather assistant."
+      },
+      {
+        "role": "user",
+        "content": "What is the weather like in Paris today?"
+      }
+    ],
+    "think": true,
+    "stream": true,
+    "options": {
+      "temperature": 0.7,
+      "top_p": 0.9
+    }
   }'
 ```
 
-### Using Python requests
-
-```python
-import requests
-
-# Health check
-health = requests.get("http://localhost:8000/health")
-print(f"Status: {health.json()}")
-
-# Send query with tool usage
-response = requests.post("http://localhost:8000/query", json={
-    "query": "Use the weather tool to check weather in Tokyo, then use filesystem tool to save the result to a file",
-    "model": "qwen3:0.6b"
-})
-print(f"Response: {response.json()['response']}")
-```
+> [!TIP]
+> Use `/docs` for interactive API exploration and testing.
 
 ## Architecture
 
@@ -193,16 +189,17 @@ The application is structured into three main modules:
 - Passes configuration to FastAPI app
 
 ### `api.py` - FastAPI Application
-- Defines API endpoints (`/health`, `/query`)
+- Defines API endpoints (`/api/chat`, `/health`)
 - Manages application lifespan (startup/shutdown)
 - Handles HTTP request/response processing
 
 ### `mcp_manager.py` - MCP Management
-- `MCPManager` class handles all MCP server connections
-- Loads servers from configuration at startup
-- Collects and manages tools from all servers
-- Processes tool calls and integrates responses
-- Communicates with Ollama for model queries
+- Loads and manages MCP servers
+- Collects and exposes all available tools
+- Handles tool calls and integrates results into Ollama responses
+
+### `utils.py` - Utility Functions
+- NDJSON parsing, health checks, and other helper functions
 
 ## Development
 
@@ -211,6 +208,7 @@ The application is structured into three main modules:
 ├── main.py                     # CLI entry point (Typer)
 ├── api.py                      # FastAPI application and endpoints
 ├── mcp_manager.py              # MCP server management and tool handling
+├── utils.py                    # Utility functions (NDJSON parsing, health checks, etc.)
 ├── mcp-config.json             # MCP server configuration
 ├── pyproject.toml              # Project configuration and dependencies (uv)
 ├── uv.lock                     # uv lock file
@@ -267,9 +265,9 @@ These tests check:
 # Quick manual test with curl (server must be running)
 curl -X GET "http://localhost:8000/health"
 
-curl -X POST "http://localhost:8000/query" \
+curl -X POST "http://localhost:8000/api/chat" \
   -H "Content-Type: application/json" \
-  -d '{"query": "What tools are available?"}'
+  -d '{"model": "qwen3:0.6b", "messages": [{"role": "user", "content": "What tools are available?"}]}'
 ```
 
 > [!NOTE]
