@@ -90,9 +90,8 @@ def test_project_structure():
 def test_imports():
     """Test that all modules can be imported without errors"""
     try:
-        import api
+        import api        
         import mcp_manager
-        assert True  # If we get here, imports worked
     except ImportError as e:
         assert False, f"Import failed: {e}"
 

@@ -59,7 +59,7 @@ async def health():
 
 @app.post("/api/chat", summary="Generate a chat completion", description="Transparent proxy to Ollama's /api/chat with MCP tool injection.")
 async def chat(
-    body: Dict[str, Any] = Body(..., example={
+    body: Dict[str, Any] = Body(..., examples={
         "model": "qwen3:0.6b",
         "messages": [
             {"role": "system", "content": "You are a weather assistant."},
