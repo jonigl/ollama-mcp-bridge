@@ -46,7 +46,8 @@ def test_mcp_manager_initialization():
     # Test initial state
     assert len(manager.sessions) == 0
     assert len(manager.all_tools) == 0
-    assert manager.ollama_client is not None
+    assert hasattr(manager, "http_client")
+    assert hasattr(manager, "ollama_url")
 
 def test_tool_definition_structure():
     """Test that tool definitions have the expected structure"""

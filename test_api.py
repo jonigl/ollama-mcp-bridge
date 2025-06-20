@@ -47,7 +47,8 @@ def test_mcp_manager_initialization():
     # Test initial state
     assert len(manager.sessions) == 0
     assert len(manager.all_tools) == 0
-    assert manager.ollama_client is not None
+    assert hasattr(manager, "http_client")
+    assert hasattr(manager, "ollama_url")
 
 def test_tool_definition_structure():
     """Test that tool definitions have the expected structure"""
@@ -83,27 +84,29 @@ def test_health_endpoint():
     assert isinstance(data["tools"], int)
     assert data["tools"] >= 0
 
-def test_query_endpoint_structure():
-    """Test that the query endpoint accepts requests and returns proper structure"""
+def test_chat_endpoint_structure():
+    """Test that the chat endpoint accepts requests and returns proper structure"""
     payload = {
-        "query": "Hello, what tools do you have?",
-        "model": "qwen3:0.6b"
+        "model": "qwen3:0.6b",
+        "stream": False,
+        "messages": [
+            {"role": "user", "content": "Hello, what tools do you have?"}
+        ]
     }
-
-    response = requests.post(f"{API_BASE}/query", json=payload)
+    response = requests.post(f"{API_BASE}/api/chat", json=payload)
     assert response.status_code == 200
-
     data = response.json()
-    assert "response" in data
-    assert isinstance(data["response"], str)
-    assert len(data["response"]) > 0
+    assert "message" in data
+    assert "content" in data["message"]
+    assert isinstance(data["message"]["content"], str)
+    assert len(data["message"]["content"]) > 0
 
-def test_query_without_model():
-    """Test that the query endpoint works without specifying a model"""
-    payload = {"query": "Simple test query"}
-
-    response = requests.post(f"{API_BASE}/query", json=payload)
-    assert response.status_code == 200
-
-    data = response.json()
-    assert "response" in data
+def test_chat_without_model():
+    """Test that the chat endpoint returns 400 if model is missing (Ollama API requires model)"""
+    payload = {
+        "messages": [
+            {"role": "user", "content": "Simple test query"}
+        ]
+    }
+    response = requests.post(f"{API_BASE}/api/chat", json=payload)
+    assert response.status_code == 400

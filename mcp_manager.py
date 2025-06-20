@@ -1,26 +1,26 @@
 """MCP Server Management"""
 import json
-from contextlib import AsyncExitStack
-from typing import Dict, List
+from typing import List, Dict
+import httpx
+from loguru import logger
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from loguru import logger
-import ollama
-from ollama import ChatResponse
+from contextlib import AsyncExitStack
 
 
 class MCPManager:
+    """Manager for MCP servers, handling tool definitions and session management."""
     def __init__(self, ollama_url: str = "http://localhost:11434"):
         self.sessions: Dict[str, ClientSession] = {}
         self.all_tools: List[dict] = []
         self.exit_stack = AsyncExitStack()
-        self.ollama_client = ollama.AsyncClient(host=ollama_url)
+        self.ollama_url = ollama_url
+        self.http_client = httpx.AsyncClient()
 
     async def load_servers(self, config_path: str):
         """Load and connect to all MCP servers from config"""
         with open(config_path, encoding='utf-8') as f:
             config = json.load(f)
-
         for name, server_config in config['mcpServers'].items():
             try:
                 await self._connect_server(name, server_config)
@@ -34,15 +34,11 @@ class MCPManager:
             args=config['args'],
             env=config.get('env')
         )
-
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
         stdio, write = stdio_transport
         session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
         await session.initialize()
-
         self.sessions[name] = session
-
-        # Get tools from this server
         meta = await session.list_tools()
         for tool in meta.tools:
             tool_def = {
@@ -56,73 +52,54 @@ class MCPManager:
                 "original_name": tool.name
             }
             self.all_tools.append(tool_def)
-
         logger.info(f"Connected to '{name}' with {len(meta.tools)} tools")
 
     async def call_tool(self, tool_name: str, arguments: dict):
-        """Call a tool on the appropriate server"""
-        # Find the tool and extract server name
-        tool_info = None
-        for tool in self.all_tools:
-            if tool["function"]["name"] == tool_name:
-                tool_info = tool
-                break
-
+        """Call a specific tool by name with provided arguments."""
+        tool_info = next((t for t in self.all_tools if t["function"]["name"] == tool_name), None)
         if not tool_info:
             raise ValueError(f"Tool {tool_name} not found")
-
         server_name = tool_info["server"]
         original_name = tool_info["original_name"]
         session = self.sessions[server_name]
-
         result = await session.call_tool(original_name, arguments)
         return result.content[0].text
 
-    async def query_with_tools(self, query: str, model: str = "qwen3:0.6b") -> str:
-        """Send query to Ollama with tool processing"""
-        messages = [{"role": "user", "content": query}]
-
-        # Initial call with all available tools
-        resp: ChatResponse = await self.ollama_client.chat(
-            model=model,
-            messages=messages,
-            think=False,
-            stream=False,
-            tools=self.all_tools
-        )
-
-        final_response = ""
-
-        # Handle tool calls
-        if resp.message.tool_calls:
-            for tool_call in resp.message.tool_calls:
-                # Call the MCP tool
-                tool_result = await self.call_tool(
-                    tool_call.function.name,
-                    tool_call.function.arguments
-                )
-
-                # Add tool result to messages
+    async def proxy_with_tools(self, endpoint: str, payload: dict) -> dict:
+        """Proxy a request to Ollama, inject tools, handle tool calls, and return the final response."""
+        # Inject tools
+        payload = dict(payload)
+        payload["tools"] = self.all_tools if self.all_tools else None
+        # First call to Ollama
+        resp = await self.http_client.post(f"{self.ollama_url}{endpoint}", json=payload)
+        # Ensure we got a valid response
+        resp.raise_for_status() 
+        result = resp.json()
+        # Check for tool calls
+        tool_calls = result.get("message", {}).get("tool_calls", [])
+        if tool_calls:
+            # Build messages for follow-up call
+            messages = payload.get("messages") or []
+            for tool_call in tool_calls:
+                tool_name = tool_call["function"]["name"]
+                arguments = tool_call["function"]["arguments"]
+                tool_result = await self.call_tool(tool_name, arguments)
+                logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
                 messages.append({
                     "role": "tool",
-                    "name": tool_call.function.name,
+                    "name": tool_name,
                     "content": tool_result
                 })
-
-            # Get final response from model with tool results
-            final_resp = await self.ollama_client.chat(
-                model=model,
-                messages=messages,
-                think=False,
-                stream=False,
-            )
-            final_response = final_resp.message.content
-        else:
-            # If no tool calls, just return the initial response
-            final_response = resp.message.content
-
-        return final_response
+            # Get final response with tool results
+            followup_payload = dict(payload)
+            followup_payload["messages"] = messages
+            followup_payload.pop("tools", None)  # tools only needed on first call
+            final_result = await self.http_client.post(f"{self.ollama_url}{endpoint}", json=followup_payload)
+            final_result.raise_for_status()
+            return final_result.json()
+        return result
 
     async def cleanup(self):
-        """Clean up all connections"""
+        """Cleanup all sessions and close HTTP client."""
+        await self.http_client.aclose()
         await self.exit_stack.aclose()
