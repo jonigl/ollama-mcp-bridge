@@ -3,7 +3,7 @@
   <img src="./misc/ollama-mcp-bridge-logo-512.png" width="256" />
 </p>
 <p align="center">
-<i>An API service that bridges multiple Model Context Protocol (MCP) servers with Ollama, providing unified access to tools across all connected servers for enhanced AI model interactions.</i>
+<i>Provides an API layer in front of the Ollama API, seamlessly adding tools from multiple MCP servers so every Ollama request can access all connected tools transparently.</i>
 </p>
 
 # Ollama MCP Bridge
@@ -23,6 +23,8 @@
 - 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
+- 🌊 **Streaming Responses**: Supports incremental streaming of responses to clients
+- 🤔 **Thinking Mode**: Proxies intermediate "thinking" messages from Ollama and MCP tools
 
 
 ## Requirements
