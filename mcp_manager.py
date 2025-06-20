@@ -10,6 +10,7 @@ from contextlib import AsyncExitStack
 
 class MCPManager:
     """Manager for MCP servers, handling tool definitions and session management."""
+
     def __init__(self, ollama_url: str = "http://localhost:11434"):
         self.sessions: Dict[str, ClientSession] = {}
         self.all_tools: List[dict] = []
@@ -65,39 +66,86 @@ class MCPManager:
         result = await session.call_tool(original_name, arguments)
         return result.content[0].text
 
-    async def proxy_with_tools(self, endpoint: str, payload: dict) -> dict:
-        """Proxy a request to Ollama, inject tools, handle tool calls, and return the final response."""
-        # Inject tools
+    def proxy_with_tools(self, endpoint: str, payload: dict, stream: bool = False):
+        """Dispatch to streaming or non-streaming logic."""
+        if stream:
+            # Return the async generator directly
+            return self._proxy_with_tools_streaming(endpoint, payload)
+        else:
+            # Return the coroutine for non-streaming
+            return self._proxy_with_tools_non_streaming(endpoint, payload)
+
+    async def _proxy_with_tools_non_streaming(self, endpoint: str, payload: dict):
         payload = dict(payload)
         payload["tools"] = self.all_tools if self.all_tools else None
         # First call to Ollama
         resp = await self.http_client.post(f"{self.ollama_url}{endpoint}", json=payload)
         # Ensure we got a valid response
-        resp.raise_for_status() 
+        resp.raise_for_status()
         result = resp.json()
         # Check for tool calls
-        tool_calls = result.get("message", {}).get("tool_calls", [])
+        tool_calls = self._extract_tool_calls(result)
         if tool_calls:
-            # Build messages for follow-up call
             messages = payload.get("messages") or []
-            for tool_call in tool_calls:
-                tool_name = tool_call["function"]["name"]
-                arguments = tool_call["function"]["arguments"]
-                tool_result = await self.call_tool(tool_name, arguments)
-                logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
-                messages.append({
-                    "role": "tool",
-                    "name": tool_name,
-                    "content": tool_result
-                })
-            # Get final response with tool results
+            messages = await self._handle_tool_calls(messages, tool_calls)
             followup_payload = dict(payload)
             followup_payload["messages"] = messages
-            followup_payload.pop("tools", None)  # tools only needed on first call
-            final_result = await self.http_client.post(f"{self.ollama_url}{endpoint}", json=followup_payload)
-            final_result.raise_for_status()
-            return final_result.json()
+            followup_payload.pop("tools", None)
+            final_resp = await self.http_client.post(f"{self.ollama_url}{endpoint}", json=followup_payload)
+            final_resp.raise_for_status()
+            return final_resp.json()
         return result
+
+    async def _proxy_with_tools_streaming(self, endpoint: str, payload: dict):
+        """Handle streaming requests with tool calls."""
+        from utils import iter_ndjson_chunks
+        payload = dict(payload)
+        payload["tools"] = self.all_tools if self.all_tools else None
+
+        async def stream_ollama(payload_to_send):
+            async with httpx.AsyncClient(timeout=None) as client:
+                async with client.stream("POST", f"{self.ollama_url}{endpoint}", json=payload_to_send) as resp:
+                    async for chunk in resp.aiter_bytes():
+                        yield chunk
+
+        # First streaming request
+        tool_call_detected = False
+        buffer_chunks = []
+        ndjson_iter = iter_ndjson_chunks(stream_ollama(payload))
+        async for json_obj in ndjson_iter:
+            buffer_chunks.append(json.dumps(json_obj).encode() + b"\n")
+            yield json.dumps(json_obj).encode() + b"\n"
+            tool_calls = self._extract_tool_calls(json_obj)
+            if tool_calls:
+                tool_call_detected = True
+                break  # Stop streaming initial response, go to tool call handling
+
+        if tool_call_detected:
+            # Handle tool calls
+            messages = payload.get("messages") or []
+            messages = await self._handle_tool_calls(messages, tool_calls)
+            followup_payload = dict(payload)
+            followup_payload["messages"] = messages
+            followup_payload.pop("tools", None)
+            # Stream the final response
+            async for chunk in stream_ollama(followup_payload):
+                yield chunk
+
+    def _extract_tool_calls(self, result):
+        return result.get("message", {}).get("tool_calls", [])
+
+    async def _handle_tool_calls(self, messages, tool_calls):
+        for tool_call in tool_calls:
+            tool_name = tool_call["function"]["name"]
+            arguments = tool_call["function"]["arguments"]
+            tool_result = await self.call_tool(tool_name, arguments)
+            logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
+            messages.append({
+                "role": "tool",
+                "name": tool_name,
+                "content": tool_result
+            })
+        return messages
 
     async def cleanup(self):
         """Cleanup all sessions and close HTTP client."""

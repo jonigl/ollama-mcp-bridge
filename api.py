@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from typing import Dict, Any
 from fastapi import FastAPI, HTTPException, Body, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import httpx
 from mcp_manager import MCPManager
@@ -42,7 +42,7 @@ app = FastAPI(
 )
 
 
-@app.get("/health", response_model=Dict[str, Any], summary="Health check", description="Check the health status of the MCP Proxy and Ollama server.")
+@app.get("/health", summary="Health check", description="Check the health status of the MCP Proxy and Ollama server.")
 async def health():
     """
     Health check endpoint.
@@ -57,7 +57,7 @@ async def health():
     return JSONResponse(status_code=status_code, content=response)
 
 
-@app.post("/api/chat", response_model=Dict[str, Any], summary="Generate a chat completion", description="Transparent proxy to Ollama's /api/chat with MCP tool injection.")
+@app.post("/api/chat", summary="Generate a chat completion", description="Transparent proxy to Ollama's /api/chat with MCP tool injection.")
 async def chat(
     body: Dict[str, Any] = Body(..., example={
         "model": "qwen3:0.6b",
@@ -79,12 +79,20 @@ async def chat(
     if not await check_ollama_health_async(mcp_manager.ollama_url):
         raise HTTPException(status_code=503, detail="Ollama server not accessible")
     try:
-        response = await mcp_manager.proxy_with_tools("/api/chat", body)
-        return response
+        if body.get("stream", False):
+            return StreamingResponse(
+                mcp_manager.proxy_with_tools(endpoint="/api/chat", payload=body, stream=True),
+                media_type="application/json"
+            )
+        else:
+            return await mcp_manager.proxy_with_tools(endpoint="/api/chat", payload=body, stream=False)
     except httpx.HTTPStatusError as e:
-        # Try to return Ollama's error message and status code        
         logger.error(f"/api/chat failed: {e.response.text}")
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text) from e
+    except httpx.RequestError as e:
+        logger.error(f"/api/chat connection error: {str(e)}")
+        raise HTTPException(status_code=503, 
+                           detail=f"Could not connect to Ollama server: {str(e)}") from e
     except Exception as e:
         logger.error(f"/api/chat failed: {e}")
         raise HTTPException(status_code=500, detail=f"/api/chat failed: {str(e)}") from e

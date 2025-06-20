@@ -110,8 +110,8 @@ python main.py --ollama-url http://192.168.1.100:11434
 python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
 ```
 
-> [!NOTE]
-> This bridge does not currently support streaming responses or thinking mode. All responses are returned as complete messages after tool processing is finished.
+> [!TIP]
+> This bridge supports both streaming responses and thinking mode. You receive incremental responses as they are generated, with tool calls and intermediate thinking messages automatically proxied between Ollama and all connected MCP tools.
 
 ### CLI Options
 - `--config`: Path to MCP configuration file (default: `mcp-config.json`)
@@ -163,6 +163,9 @@ The application is structured into three main modules:
 - Collects and exposes all available tools
 - Handles tool calls and integrates results into Ollama responses
 
+### `utils.py` - Utility Functions
+- NDJSON parsing, health checks, and other helper functions
+
 ## Development
 
 ### Project Structure
@@ -170,6 +173,7 @@ The application is structured into three main modules:
 ├── main.py                     # CLI entry point (Typer)
 ├── api.py                      # FastAPI application and endpoints
 ├── mcp_manager.py              # MCP server management and tool handling
+├── utils.py                    # Utility functions (NDJSON parsing, health checks, etc.)
 ├── mcp-config.json             # MCP server configuration
 ├── pyproject.toml              # Project configuration and dependencies (uv)
 ├── uv.lock                     # uv lock file

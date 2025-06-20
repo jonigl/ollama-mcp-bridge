@@ -1,5 +1,6 @@
 """Utility functions for ollama-mcp-bridge"""
 import httpx
+import json
 from loguru import logger
 
 
@@ -28,3 +29,22 @@ async def check_ollama_health_async(ollama_url: str, timeout: int = 3) -> bool:
     except Exception as e:
         logger.error(f"Failed to connect to Ollama: {e}")
         return False
+
+async def iter_ndjson_chunks(chunk_iterator):
+    """Async generator that yields parsed JSON objects from NDJSON (newline-delimited JSON) byte chunks."""
+    buffer = b""
+    async for chunk in chunk_iterator:
+        buffer += chunk
+        while b"\n" in buffer:
+            line, buffer = buffer.split(b"\n", 1)
+            if line.strip():
+                try:
+                    yield json.loads(line)
+                except Exception as e:
+                    logger.debug(f"Error parsing NDJSON line: {e}")
+    # Handle any trailing data
+    if buffer.strip():
+        try:
+            yield json.loads(buffer)
+        except Exception as e:
+            logger.debug(f"Error parsing trailing NDJSON: {e}")
