@@ -50,6 +50,17 @@ ollama serve
 python main.py
 ```
 
+If you use uv, you can also install the project in editable mode:
+
+```bash
+# Install the project in editable mode
+# This allows you to modify the code without reinstalling
+uv tool install --editable .
+# Run it like this:
+ollama-mcp-bridge
+```
+
+
 ## How It Works
 
 1. **Startup**: All MCP servers defined in the configuration are loaded and connected
@@ -113,6 +124,12 @@ python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http
 ```
 
 > [!TIP]
+> If installing with `uv`, you can run the bridge directly using:
+> ```bash
+> ollama-mcp-bridge --config /path/to/custom-config.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
+> ```
+
+> [!NOTE]
 > This bridge supports both streaming responses and thinking mode. You receive incremental responses as they are generated, with tool calls and intermediate thinking messages automatically proxied between Ollama and all connected MCP tools.
 
 ### CLI Options
@@ -135,11 +152,27 @@ This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools f
 
 ### Example: Chat
 ```bash
-curl -X POST "http://localhost:8000/api/chat" \
+curl -N -X POST http://localhost:8000/api/chat \
+  -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "qwen3:0.6b",
-    "messages": [{"role": "user", "content": "What tools are available?"}]
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a weather assistant."
+      },
+      {
+        "role": "user",
+        "content": "What is the weather like in Paris today?"
+      }
+    ],
+    "think": true,
+    "stream": true,
+    "options": {
+      "temperature": 0.7,
+      "top_p": 0.9
+    }
   }'
 ```
 
