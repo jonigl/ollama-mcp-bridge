@@ -3,8 +3,28 @@ name: Tests
 on:
   push:
     branches: [ main, develop ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/*.gif'
+      - '**/*.png'
+      - 'LICENSE'
+      - 'misc/**'
+      - '**/*.txt'
+      - '.gitignore'
+      - '.python-version'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/*.gif'
+      - '**/*.png'
+      - 'LICENSE'
+      - 'misc/**'
+      - '**/*.txt'
+      - '.gitignore'
+      - '.python-version'
 
 permissions:
   contents: read
