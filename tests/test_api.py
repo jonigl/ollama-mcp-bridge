@@ -3,9 +3,6 @@ Simple pytest tests for the Ollama MCP Bridge API
 Run with: uv run pytest tests/test_api.py -v
 """
 import requests
-import json
-import tempfile
-import os
 
 API_BASE = "http://localhost:8000"
 

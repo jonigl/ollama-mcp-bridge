@@ -6,8 +6,8 @@ from fastapi import Request, Response, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
-from ollama_mcp_bridge.utils import check_ollama_health_async, iter_ndjson_chunks
-from ollama_mcp_bridge.mcp_manager import MCPManager
+from .utils import check_ollama_health_async, iter_ndjson_chunks
+from .mcp_manager import MCPManager
 
 
 class ProxyService:

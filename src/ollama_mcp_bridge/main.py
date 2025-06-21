@@ -3,9 +3,9 @@ import typer
 import uvicorn
 from loguru import logger
 
-from ollama_mcp_bridge.api import app
-from ollama_mcp_bridge.utils import check_ollama_health, validate_cli_inputs
-from ollama_mcp_bridge import __version__
+from .api import app
+from .utils import check_ollama_health, validate_cli_inputs
+from . import __version__
 
 def cli_app(
     config: str = typer.Option("mcp-config.json", "--config", help="Path to MCP config JSON file"),
