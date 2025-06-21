@@ -15,6 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Important for setuptools_scm to work correctly
 
     - name: Install uv
       uses: astral-sh/setup-uv@v4
@@ -28,9 +30,14 @@ jobs:
 
     - name: Run unit tests
       run: |
-        uv run pytest test_unit.py -v
+        uv run pytest tests/test_unit.py -v
 
     - name: Test imports and basic functionality
       run: |
-        uv run python -c "from mcp_manager import MCPManager; print('✓ MCPManager import works')"
-        uv run python -c "from api import app; print('✓ FastAPI app import works')"
+        uv run python -c "from src.ollama_mcp_bridge.mcp_manager import MCPManager; print('✓ MCPManager import works')"
+        uv run python -c "from src.ollama_mcp_bridge.api import app; print('✓ FastAPI app import works')"
+
+    - name: Test version detection
+      run: |
+        uv pip install -e .
+        uv run python -c "from ollama_mcp_bridge import __version__; print(f'Detected version: {__version__}')"

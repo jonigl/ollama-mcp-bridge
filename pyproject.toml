@@ -1,27 +1,30 @@
 [project]
 name = "ollama-mcp-bridge"
-version = "0.2.0"
+dynamic = ["version"]  # Use dynamic version from setuptools_scm
 description = "Bridge API service connecting Ollama with Model Context Protocol (MCP) servers"
+keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools"]
 readme = "README.md"
 requires-python = ">=3.10.15"
 authors = [
     {name = "Jonathan Löwenstern"}
 ]
-
 license = {text = "MIT"}
-homepage = "https://github.com/jonigl/ollama-mcp-bridge"
-repository = "https://github.com/jonigl/ollama-mcp-bridge"
-documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
-keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools"]
 
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "typer>=0.9.0",
-    "rich>=13.0.0",    
-    "mcp>=1.0.0",    
-    "loguru>=0.7.0"
+    "rich>=13.0.0",
+    "mcp>=1.0.0",
+    "loguru>=0.7.0",
+    "httpx>=0.24.0"
 ]
+
+[project.urls]
+homepage = "https://github.com/jonigl/ollama-mcp-bridge"
+repository = "https://github.com/jonigl/ollama-mcp-bridge"
+documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
+
 
 [project.optional-dependencies]
 test = [
@@ -30,11 +33,15 @@ test = [
 ]
 
 [project.scripts]
-ollama-mcp-bridge = "main:main"
+ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = ["."]
+[tool.setuptools_scm]
+write_to = "src/ollama_mcp_bridge/_version.py"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["ollama_mcp_bridge"]

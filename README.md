@@ -1,6 +1,6 @@
 <p align="center">
 
-  <img src="./misc/ollama-mcp-bridge-logo-512.png" width="256" />
+  <img src="https://github.com/jonigl/ollama-mcp-bridge/raw/main/misc/ollama-mcp-bridge-logo-512.png" width="256" />
 </p>
 <p align="center">
 <i>Provides an API layer in front of the Ollama API, seamlessly adding tools from multiple MCP servers so every Ollama request can access all connected tools transparently.</i>
@@ -17,6 +17,7 @@
 - 🏗️ **Modular Architecture**: Clean separation into CLI, API, and MCP management modules
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
 - 🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
+- 🔄 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
 - ⚡️ **FastAPI Backend**: Modern async API with automatic documentation
 - 💻 **Typer CLI**: Clean command-line interface with configurable options
 - 📊 **Structured Logging**: Uses loguru for comprehensive logging
@@ -31,7 +32,7 @@
 
 - Python >= 3.10.15
 - Ollama server running (local or remote)
-- MCP server scripts configured in mcp-config.json
+- MCP server scripts configured in `mcp-servers-config/mcp-config.json`
 
 ## Installation
 
@@ -46,15 +47,14 @@ uv sync
 # Start Ollama (if not already running)
 ollama serve
 
-# Run the bridge
-python main.py
+# Run the bridge (preferred)
+ollama-mcp-bridge
 ```
 
-If you use uv, you can also install the project in editable mode:
+If you want to install the project in editable mode (for development):
 
 ```bash
 # Install the project in editable mode
-# This allows you to modify the code without reinstalling
 uv tool install --editable .
 # Run it like this:
 ollama-mcp-bridge
@@ -74,7 +74,7 @@ ollama-mcp-bridge
 
 ## Configuration
 
-Create an MCP configuration file (`mcp-config.json`) with your servers:
+Create an MCP configuration file at `mcp-servers-config/mcp-config.json` with your servers:
 
 ```json
 {
@@ -103,24 +103,27 @@ Create an MCP configuration file (`mcp-config.json`) with your servers:
 }
 ```
 
+> [!NOTE]
+> An example MCP server script is provided at `mcp-servers-config/mock-weather-mcp-server.py`.
+
 ## Usage
 
 ### Start the Server
 ```bash
-# Start with default settings (config: mcp-config.json, host: localhost, port: 8000)
-python main.py
+# Start with default settings (config: mcp-servers-config/mcp-config.json, host: 0.0.0.0, port: 8000)
+ollama-mcp-bridge
 
 # Start with custom configuration file
-python main.py --config /path/to/custom-config.json
+ollama-mcp-bridge --config /path/to/custom-config.json
 
 # Custom host and port
-python main.py --host 0.0.0.0 --port 8080
+ollama-mcp-bridge --host 0.0.0.0 --port 8080
 
 # Custom Ollama server URL
-python main.py --ollama-url http://192.168.1.100:11434
+ollama-mcp-bridge --ollama-url http://192.168.1.100:11434
 
 # Combine options
-python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
+ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
 ```
 
 > [!TIP]
@@ -145,6 +148,10 @@ The API is available at `http://localhost:8000`.
 - **Swagger UI docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Ollama-compatible endpoints:**
   - `POST /api/chat` — Chat endpoint (same as Ollama API, but with MCP tool support)
+
+> [!IMPORTANT]
+> **All other standard Ollama endpoints are also transparently proxied by the bridge.**
+
 - **Health check:**
   - `GET /health`
 
@@ -203,22 +210,6 @@ The application is structured into three main modules:
 
 ## Development
 
-### Project Structure
-```
-├── main.py                     # CLI entry point (Typer)
-├── api.py                      # FastAPI application and endpoints
-├── mcp_manager.py              # MCP server management and tool handling
-├── utils.py                    # Utility functions (NDJSON parsing, health checks, etc.)
-├── mcp-config.json             # MCP server configuration
-├── pyproject.toml              # Project configuration and dependencies (uv)
-├── uv.lock                     # uv lock file
-├── test_unit.py                # Unit tests (GitHub Actions compatible)
-├── test_api.py                 # Integration tests (require running server)
-├── .github/workflows/test.yml  # GitHub Actions CI pipeline
-├── mock-weather-mcp-server.py  # Example MCP server for testing
-└── README.md                   # This file
-```
-
 ### Key Dependencies
 - **FastAPI**: Modern web framework for the API
 - **Typer**: CLI framework for command-line interface
@@ -237,7 +228,7 @@ The project has two types of tests:
 uv sync --extra test
 
 # Run unit tests (no server required)
-uv run pytest test_unit.py -v
+uv run pytest tests/test_unit.py -v
 ```
 
 These tests check:
@@ -249,10 +240,10 @@ These tests check:
 #### Integration Tests (require running services)
 ```bash
 # First, start the server in one terminal
-uv run python main.py
+ollama-mcp-bridge
 
 # Then in another terminal, run the integration tests
-uv run pytest test_api.py -v
+uv run pytest tests/test_api.py -v
 ```
 
 These tests check:
