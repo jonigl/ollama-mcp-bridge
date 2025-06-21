@@ -44,6 +44,8 @@ jobs:
           PKG_VERSION=$(uv run python -c "import setuptools_scm; print(setuptools_scm.get_version())")
           echo "Tag version: $TAG_VERSION"
           echo "Package version: $PKG_VERSION"
+          # Store package version for later use in installation
+          echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_ENV
           if [[ "$PKG_VERSION" != *"$TAG_VERSION"* ]]; then
             echo "Version mismatch between tag and package!"
             exit 1
@@ -61,6 +63,8 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          verbose: true
+          skip-existing: true
 
       - name: Test installation from TestPyPI
         run: |
@@ -73,9 +77,9 @@ jobs:
           RETRY_DELAY=10
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Installation attempt $i of $MAX_RETRIES..."
-            if python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ollama-mpc-bridge; then
+            if uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ollama-mpc-bridge==$PKG_VERSION"; then
               echo "Package installed successfully!"
-              python -c "from ollama_mpc_bridge import __version__; print(f'Installed version: {__version__}')"
+              uv run python -c "from ollama_mpc_bridge import __version__; print(f'Installed version: {__version__}')"
               exit 0
             else
               echo "Installation failed. Waiting $RETRY_DELAY seconds before retrying..."
@@ -88,7 +92,7 @@ jobs:
 
       # Upload the built packages as artifacts for inspection
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
