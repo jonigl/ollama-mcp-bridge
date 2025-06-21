@@ -41,5 +41,5 @@ jobs:
         run: uv run pytest tests/test_unit.py -v
       - name: Test version detection
         run: |
-          uv tool install ollama-mcp-bridge
+          uv tool install .
           uv run python -c "from ollama_mcp_bridge import __version__; print(f'Detected version: {__version__}')"
