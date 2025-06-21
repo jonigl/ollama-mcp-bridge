@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches: [ main, develop ]
-    paths-ignore: &ignore-paths
+    paths-ignore:
       - '**/*.md'
       - '**/*.jpg'
       - '**/*.gif'
@@ -15,7 +15,16 @@ on:
       - '.python-version'
   pull_request:
     branches: [ main ]
-    paths-ignore: *ignore-paths
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/*.gif'
+      - '**/*.png'
+      - 'LICENSE'
+      - 'misc/**'
+      - '**/*.txt'
+      - '.gitignore'
+      - '.python-version'
 
 permissions:
   contents: read
