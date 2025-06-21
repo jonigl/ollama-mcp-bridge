@@ -8,24 +8,29 @@
 
 # Ollama MCP Bridge
 
+[![PyPI - Python Version](https://img.shields.io/pypi/v/ollama-mcp-bridge?label=ollama-mcp-bridge-pypi)](https://pypi.org/project/ollama-mcp-bridge/)
 [![Tests](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml)
+[![Test Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml)
+[![Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+
 ## Features
 
-- 🏗️ **Modular Architecture**: Clean separation into CLI, API, and MCP management modules
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
+- 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
+- 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
 - 🔄 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
-- ⚡️ **FastAPI Backend**: Modern async API with automatic documentation
-- 💻 **Typer CLI**: Clean command-line interface with configurable options
-- 📊 **Structured Logging**: Uses loguru for comprehensive logging
 - 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI
-- 🔗 **Tool Integration**: Automatic tool call processing and response integration
-- 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
 - 🌊 **Streaming Responses**: Supports incremental streaming of responses to clients
 - 🤔 **Thinking Mode**: Proxies intermediate "thinking" messages from Ollama and MCP tools
+- ⚡️ **FastAPI Backend**: Modern async API with automatic documentation
+- 🏗️ **Modular Architecture**: Clean separation into CLI, API, and MCP management modules
+- 💻 **Typer CLI**: Clean command-line interface with configurable options
+- 📊 **Structured Logging**: Uses loguru for comprehensive logging
+- 📦 **PyPI Package**: Easily installable via pip or uv from PyPI
 
 
 ## Requirements
@@ -35,6 +40,21 @@
 - MCP server scripts configured in `mcp-servers-config/mcp-config.json`
 
 ## Installation
+
+You can install `ollama-mcp-bridge` in two main ways:
+
+### Quick Start
+Install instantly with [uvx](https://github.com/astral-sh/uv):
+```bash
+uvx ollama-mcp-bridge
+```
+
+### Or, install from PyPI with pip
+```bash
+pip install --upgrade ollama-mcp-bridge
+```
+
+### Or, install from source
 
 ```bash
 # Clone the repository
@@ -60,17 +80,18 @@ uv tool install --editable .
 ollama-mcp-bridge
 ```
 
-
 ## How It Works
 
 1. **Startup**: All MCP servers defined in the configuration are loaded and connected
 2. **Tool Collection**: Tools from all servers are collected and made available to Ollama
-3. **Chat Completion Request**: When a chat completion request is received:
-  - The request is forwarded to Ollama along with the list of all available tools
-  - If Ollama chooses to invoke any tools, those tool calls are executed through the corresponding MCP servers
+3. **Chat Completion Request (`/api/chat` endpoint only)**: When a chat completion request is received on `/api/chat`:
+   - The request is forwarded to Ollama along with the list of all available tools
+   - If Ollama chooses to invoke any tools, those tool calls are executed through the corresponding MCP servers
    - Tool responses are fed back to Ollama
    - The final response (with tool results integrated) is returned to the client
-4. **Logging**: All operations are logged using loguru for debugging and monitoring
+   - **This is the only endpoint where MCP server tools are integrated.**
+4. **Other Endpoints**: All other endpoints (except `/api/chat` and `/health`) are fully proxied to the underlying Ollama server with no modification.
+5. **Logging**: All operations are logged using loguru for debugging and monitoring
 
 ## Configuration
 
@@ -148,14 +169,15 @@ The API is available at `http://localhost:8000`.
 - **Swagger UI docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Ollama-compatible endpoints:**
   - `POST /api/chat` — Chat endpoint (same as Ollama API, but with MCP tool support)
+    - **This is the only endpoint where MCP server tools are integrated.** All tool calls are handled and responses are merged transparently for the client.
+  - **All other endpoints** (except `/api/chat` and `/health`) are fully proxied to the underlying Ollama server with no modification. You can use your existing Ollama clients and libraries as usual.
+- **Health check:**
+  - `GET /health` — Specific to `ollama-mcp-bridge` (not proxied)
 
 > [!IMPORTANT]
-> **All other standard Ollama endpoints are also transparently proxied by the bridge.**
+> `/api/chat` is the only endpoint with MCP tool integration. All other endpoints are transparently proxied to Ollama. `/health` is specific to the bridge.
 
-- **Health check:**
-  - `GET /health`
-
-This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every request. You can use your existing Ollama clients and libraries, just point them to this bridge instead of your Ollama server.
+This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every `/api/chat` request. You can use your existing Ollama clients and libraries, just point them to this bridge instead of your Ollama server.
 
 ### Example: Chat
 ```bash
@@ -186,27 +208,6 @@ curl -N -X POST http://localhost:8000/api/chat \
 > [!TIP]
 > Use `/docs` for interactive API exploration and testing.
 
-## Architecture
-
-The application is structured into three main modules:
-
-### `main.py` - CLI Entry Point
-- Uses Typer for command-line interface
-- Handles configuration and server startup
-- Passes configuration to FastAPI app
-
-### `api.py` - FastAPI Application
-- Defines API endpoints (`/api/chat`, `/health`)
-- Manages application lifespan (startup/shutdown)
-- Handles HTTP request/response processing
-
-### `mcp_manager.py` - MCP Management
-- Loads and manages MCP servers
-- Collects and exposes all available tools
-- Handles tool calls and integrates results into Ollama responses
-
-### `utils.py` - Utility Functions
-- NDJSON parsing, health checks, and other helper functions
 
 ## Development
 
@@ -263,10 +264,6 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 > [!NOTE]
 > Tests require the server to be running on localhost:8000. Make sure to start the server before running pytest.
-
-
-
-This creates a seamless experience where Ollama can use any tool from any connected MCP server without the client needing to know about the underlying MCP infrastructure.
 
 ## Inspiration and Credits
 
