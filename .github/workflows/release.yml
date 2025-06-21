@@ -1,0 +1,96 @@
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on tags that start with 'v'
+
+jobs:
+  test-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # For trusted publishing to PyPI
+    environment:
+      name: pypi
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important for setuptools_scm
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install build dependencies
+        run: uv pip install build twine
+
+      - name: Build package
+        run: uv run python -m build
+
+      - name: Check package with twine
+        run: uv run twine check dist/*
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+      - name: Test installation from TestPyPI
+        run: |
+          # Add a delay to allow TestPyPI to process the upload
+          echo "Waiting 10 seconds for TestPyPI to process the package..."
+          sleep 10
+
+          # Try to install the package with retry mechanism
+          MAX_RETRIES=3
+          RETRY_DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Installation attempt $i of $MAX_RETRIES..."
+            if python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ollama-mpc-bridge; then
+              echo "Package installed successfully!"
+              python -c "from ollama_mpc_bridge import __version__; print(f'Installed version: {__version__}')"
+              exit 0
+            else
+              echo "Installation failed. Waiting $RETRY_DELAY seconds before retrying..."
+              sleep $RETRY_DELAY
+            fi
+          done
+
+          echo "Failed to install package after $MAX_RETRIES attempts."
+          exit 1
+
+  publish:
+    needs: test-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: pypi
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install build dependencies
+        run: uv pip install build
+
+      - name: Build package
+        run: uv run python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

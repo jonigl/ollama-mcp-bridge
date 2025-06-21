@@ -1,6 +1,6 @@
 [project]
 name = "ollama-mcp-bridge"
-version = "0.2.0"
+dynamic = ["version"]  # Use dynamic version from setuptools_scm
 description = "Bridge API service connecting Ollama with Model Context Protocol (MCP) servers"
 keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools"]
 readme = "README.md"
@@ -36,8 +36,11 @@ test = [
 ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/ollama_mcp_bridge/_version.py"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
