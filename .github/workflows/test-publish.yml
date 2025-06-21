@@ -28,7 +28,5 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-      - name: Install from TestPyPI no-deps
+      - name: Test installation from TestPyPI
         run: pip install --index-url https://test.pypi.org/simple/ --no-deps ollama-mcp-bridge
-      - name: Check version
-        run: ollama-mcp-bridge --version

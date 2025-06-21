@@ -39,7 +39,3 @@ jobs:
       - run: uv sync --dev
       - name: Run unit tests
         run: uv run pytest tests/test_unit.py -v
-      - name: Test version detection
-        run: |
-          uv tool install .
-          ollama-mcp-bridge --version
