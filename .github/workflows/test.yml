@@ -28,9 +28,9 @@ jobs:
 
     - name: Run unit tests
       run: |
-        uv run pytest test_unit.py -v
+        uv run pytest tests/test_unit.py -v
 
     - name: Test imports and basic functionality
       run: |
-        uv run python -c "from mcp_manager import MCPManager; print('✓ MCPManager import works')"
-        uv run python -c "from api import app; print('✓ FastAPI app import works')"
+        uv run python -c "from src.ollama_mcp_bridge.mcp_manager import MCPManager; print('✓ MCPManager import works')"
+        uv run python -c "from src.ollama_mcp_bridge.api import app; print('✓ FastAPI app import works')"
