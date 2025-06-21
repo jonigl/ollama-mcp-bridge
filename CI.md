@@ -4,101 +4,117 @@ This document describes the GitHub workflows set up for the ollama-mcp-bridge pr
 
 ## Available Workflows
 
-### 1. Tests (`test.yml`)
+### 1. Tests ([test.yml](.github/workflows/test.yml))
 
-**Trigger:** Push to `main` or `develop` branches, or pull requests to `main`.
+**Trigger:**
+- Push to `main` branch
+- Pull requests to `main` branch
+- Ignores changes to docs, images, and some config files
 
-**Purpose:** Runs unit tests and validates basic functionality.
+**Purpose:**
+Runs unit tests using `pytest` in a fresh environment managed by `uv`.
 
-**Key Features:**
-- Uses `uv` for Python dependency management
-- Runs pytest unit tests
-- Verifies import functionality
-- Checks version detection
+**Key Steps:**
+- Checkout code
+- Set up Python and `uv`
+- Sync dependencies
+- Run `pytest` on `tests/test_unit.py`
 
-### 2. TestPyPI Publish (`test-pypi-publish.yml`)
+---
 
-**Trigger:** Tags matching `v*a*`, `v*b*`, or `v*rc*` (alpha, beta, release candidates)
+### 2. Test Publish ([test-publish.yml](.github/workflows/test-publish.yml))
 
-**Purpose:** Publishes packages to TestPyPI for verification.
+**Trigger:**
+- Push of tags matching `vX.Y.Z` (e.g., `v1.0.0`)
+- Pushes to the `fix/build-system-and-ci` branch (for testing)
 
-**Key Features:**
-- Builds the package with `build`
-- Validates package with `twine check`
-- Verifies the version matches the git tag
-- Publishes to TestPyPI
-- Tests installation from TestPyPI with retry logic
-- Uploads built packages as artifacts for inspection
+**Purpose:**
+Builds the package and publishes it to **TestPyPI** for verification.
 
-### 4. Release to PyPI (`release.yml`)
+**Key Steps:**
+- Checkout code
+- Set up Python and `uv`
+- Build the package
+- Publish to TestPyPI using `pypa/gh-action-pypi-publish` with the TestPyPI repository URL
 
-**Trigger:** Tags starting with `v*`
+---
 
-**Purpose:** Official release process for publishing to PyPI.
+### 3. Publish ([publish.yml](.github/workflows/publish.yml))
 
-**Key Features:**
-- Two-stage process: test publish to TestPyPI first
-- If successful, publishes to PyPI
-- Handles trusted publishing with GitHub OIDC tokens
+**Trigger:**
+- When a GitHub Release is created
+
+**Purpose:**
+Builds the package and publishes it to **PyPI**.
+
+**Key Steps:**
+- Checkout code
+- Set up Python and `uv`
+- Build the package
+- Publish to PyPI using `pypa/gh-action-pypi-publish`
+- Upload built distributions to the GitHub Release as artifacts
+
+---
 
 ## Tag Naming Conventions
 
 - **Production releases:** `v1.0.0`, `v1.1.0`, etc.
-- **Pre-releases (PEP 440 compliant):**
-  - Release candidates: `v1.0.0rc1`, `v1.0.0rc2`, etc.
-  - Beta releases: `v1.0.0b1`, `v1.0.0b2`, etc.
-  - Alpha releases: `v1.0.0a1`, `v1.0.0a2`, etc.
+- **Pre-releases:** Not currently handled by workflows (see below)
+
+> **Note:** Only tags matching `vX.Y.Z` will trigger TestPyPI publishing. Pre-release tags (like `v1.0.0a1`) are not currently matched by the workflow.
 
 ## Required Secrets
 
-- `TEST_PYPI_API_TOKEN`: API token for TestPyPI
-- `PYPI_API_TOKEN`: API token for PyPI
-
-## PEP 440 Compliance
-
-All version tags must be PEP 440 compliant to work with setuptools_scm. This means:
-
-- No hyphens in version numbers
-- Use `a` for alpha, `b` for beta, `rc` for release candidates
-- Examples: `v1.0.0a1`, `v1.0.0b1`, `v1.0.0rc1`
-
-## Dependabot Configuration
-
-Dependabot is configured to check for updates to dependencies weekly using the `uv` package ecosystem.
+- For PyPI: OIDC is used (no token needed if using trusted publishing)
+- For TestPyPI: OIDC is used (no token needed if using trusted publishing)
 
 ## Usage Examples
 
-### Creating an alpha release (for TestPyPI):
-```bash
-git tag v1.0.0a1
-git push origin v1.0.0a1
-```
+### Creating a release (for PyPI and TestPyPI):
 
-### Creating a beta release:
-```bash
-git tag v1.0.0b1
-git push origin v1.0.0b1
-```
-
-### Creating a release candidate:
-```bash
-git tag v1.0.0rc1
-git push origin v1.0.0rc1
-```
-
-### Creating a production release:
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
+### Creating a GitHub Release (for PyPI):
+
+- Go to the GitHub Releases page and create a new release for your tag.
+
+---
+
+## Testing Your Package from TestPyPI
+
+To verify your package installation from TestPyPI:
+
+```bash
+# Create a fresh virtual environment
+python -m venv test_venv
+source test_venv/bin/activate  # On macOS/Linux
+# Or on Windows: test_venv\Scripts\activate
+
+# Install dependencies first from PyPI
+pip install fastapi httpx loguru mcp typer uvicorn
+
+# Install your package from TestPyPI with --no-deps
+pip install --index-url https://test.pypi.org/simple/ --no-deps ollama-mcp-bridge
+
+# Test the CLI command
+ollama-mcp-bridge --version
+```
+
+---
+
 ## Release Process
 
-After pushing a tag, the corresponding workflow will be triggered automatically. GitHub releases (including release notes and changelog) are manually created using the GitHub web interface after the tag is created and the workflow completes successfully.
+- Push a tag like `v1.0.0` to trigger TestPyPI publish.
+- Create a GitHub Release to trigger PyPI publish.
+- Artifacts are uploaded to the GitHub Release.
 
-### Future Improvements
+---
 
-In the future, we plan to:
-1. Automate the generation of release notes and changelogs
-2. Implement conventional commit practices for automated semantic versioning (semver)
-3. Integrate tools like semantic-release to fully automate the release process based on commit messages
+## Future Improvements
+
+- Add support for pre-release tags (alpha, beta, rc) in workflows.
+- Automate changelog and release note generation.
+- Integrate semantic-release or similar tools
