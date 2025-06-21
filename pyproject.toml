@@ -1,6 +1,4 @@
-[build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+
 
 [project]
 name = "ollama-mcp-bridge"
@@ -13,7 +11,6 @@ keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools",
 authors = [
   { name = "Jonathan Gastón Löwenstern" },
 ]
-
 dependencies = [
     "fastapi>=0.115.13",
     "httpx>=0.28.1",
@@ -28,11 +25,15 @@ Documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
 Issues = "https://github.com/jonigl/ollama-mcp-bridge/issues"
 Source = "https://github.com/jonigl/ollama-mcp-bridge"
 
-[project.scripts]
-ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = 'vcs'
+
+[project.scripts]
+ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ollama_mcp_bridge"]

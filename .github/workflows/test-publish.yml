@@ -1,14 +1,10 @@
+# This workflow publishes the package to TestPyPI when a tag is pushed.
 name: TestPyPI Publish
 
 on:
   push:
     tags:
-      - 'v*a*'   # Trigger on alpha releases like v0.3.0a1
-      - 'v*b*'   # Trigger on beta releases like v0.3.0b1
-      - 'v*rc*'  # Trigger on release candidates like v0.3.0rc1
-    branches:
-      - fix/build-system-and-ci # this is temporary branch for testing the build system and CI
-
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Matches semantic versioning tags like v1.0.0
 jobs:
   test-publish:
     runs-on: ubuntu-latest
