@@ -24,6 +24,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.10
 
+      - name: Create virtual environment
+        run: uv venv
+
       - name: Install build dependencies
         run: uv pip install build twine
 

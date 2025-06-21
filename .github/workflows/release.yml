@@ -3,7 +3,7 @@ name: Release to PyPI
 on:
   push:
     tags:
-      - 'v*'  # Trigger on tags that start with 'v'
+      - 'v[0-9]*.[0-9]*.[0-9]*'  # Trigger only on release tags like v0.1.0, v1.0.0, etc.
 
 jobs:
   test-publish:
@@ -23,6 +23,9 @@ jobs:
 
       - name: Set up Python
         run: uv python install 3.10
+
+      - name: Create virtual environment
+        run: uv venv
 
       - name: Install build dependencies
         run: uv pip install build twine
@@ -82,6 +85,9 @@ jobs:
 
       - name: Set up Python
         run: uv python install 3.10
+
+      - name: Create virtual environment
+        run: uv venv
 
       - name: Install build dependencies
         run: uv pip install build
