@@ -16,28 +16,19 @@ This document describes the GitHub workflows set up for the ollama-mcp-bridge pr
 - Verifies import functionality
 - Checks version detection
 
-### 2. Release Dry Run (`dry-run.yml`)
+### 2. TestPyPI Publish (`test-pypi-publish.yml`)
 
-**Trigger:** Tags matching `v*-rc*`, `v*-beta*`, or `v*-alpha*`
+**Trigger:** Tags matching `v*a*`, `v*b*`, or `v*rc*` (alpha, beta, release candidates)
 
-**Purpose:** Tests the build and packaging process without publishing.
+**Purpose:** Publishes packages to TestPyPI for verification.
 
 **Key Features:**
 - Builds the package with `build`
 - Validates package with `twine check`
 - Verifies the version matches the git tag
-- Uploads built packages as artifacts for inspection
-
-### 3. TestPyPI Publish (`test-pypi-publish.yml`)
-
-**Trigger:** Tags matching `v*-test*`
-
-**Purpose:** Publishes packages to TestPyPI for verification.
-
-**Key Features:**
-- Builds and validates the package
 - Publishes to TestPyPI
 - Tests installation from TestPyPI with retry logic
+- Uploads built packages as artifacts for inspection
 
 ### 4. Release to PyPI (`release.yml`)
 
@@ -53,16 +44,23 @@ This document describes the GitHub workflows set up for the ollama-mcp-bridge pr
 ## Tag Naming Conventions
 
 - **Production releases:** `v1.0.0`, `v1.1.0`, etc.
-- **Pre-releases:**
-  - Release candidates: `v1.0.0-rc1`, `v1.0.0-rc2`, etc.
-  - Beta releases: `v1.0.0-beta1`, etc.
-  - Alpha releases: `v1.0.0-alpha1`, etc.
-- **TestPyPI testing:** `v1.0.0-test1`, etc.
+- **Pre-releases (PEP 440 compliant):**
+  - Release candidates: `v1.0.0rc1`, `v1.0.0rc2`, etc.
+  - Beta releases: `v1.0.0b1`, `v1.0.0b2`, etc.
+  - Alpha releases: `v1.0.0a1`, `v1.0.0a2`, etc.
 
 ## Required Secrets
 
 - `TEST_PYPI_API_TOKEN`: API token for TestPyPI
 - `PYPI_API_TOKEN`: API token for PyPI
+
+## PEP 440 Compliance
+
+All version tags must be PEP 440 compliant to work with setuptools_scm. This means:
+
+- No hyphens in version numbers
+- Use `a` for alpha, `b` for beta, `rc` for release candidates
+- Examples: `v1.0.0a1`, `v1.0.0b1`, `v1.0.0rc1`
 
 ## Dependabot Configuration
 
@@ -70,16 +68,22 @@ Dependabot is configured to check for updates to dependencies weekly using the `
 
 ## Usage Examples
 
-### Creating a test release:
+### Creating an alpha release (for TestPyPI):
 ```bash
-git tag v1.0.0-test1
-git push origin v1.0.0-test1
+git tag v1.0.0a1
+git push origin v1.0.0a1
+```
+
+### Creating a beta release:
+```bash
+git tag v1.0.0b1
+git push origin v1.0.0b1
 ```
 
 ### Creating a release candidate:
 ```bash
-git tag v1.0.0-rc1
-git push origin v1.0.0-rc1
+git tag v1.0.0rc1
+git push origin v1.0.0rc1
 ```
 
 ### Creating a production release:
