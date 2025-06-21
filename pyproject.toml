@@ -1,47 +1,44 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
 [project]
 name = "ollama-mcp-bridge"
-dynamic = ["version"]  # Use dynamic version from setuptools_scm
+dynamic = ["version"]
 description = "Bridge API service connecting Ollama with Model Context Protocol (MCP) servers"
-keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools"]
 readme = "README.md"
-requires-python = ">=3.10.15"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools", "llm", "model-context-protocol", "local-llm", "ollama-api", "ollama-mcp"]
 authors = [
-    {name = "Jonathan Löwenstern"}
+  { name = "Jonathan Gastón Löwenstern" },
 ]
-license = {text = "MIT"}
 
 dependencies = [
-    "fastapi>=0.104.0",
-    "uvicorn[standard]>=0.24.0",
-    "typer>=0.9.0",
-    "rich>=13.0.0",
-    "mcp>=1.0.0",
-    "loguru>=0.7.0",
-    "httpx>=0.24.0"
+    "fastapi>=0.115.13",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "mcp>=1.9.4",
+    "typer>=0.16.0",
+    "uvicorn>=0.34.3",
 ]
 
 [project.urls]
-homepage = "https://github.com/jonigl/ollama-mcp-bridge"
-repository = "https://github.com/jonigl/ollama-mcp-bridge"
-documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
-
-
-[project.optional-dependencies]
-test = [
-    "pytest>=7.0.0",
-    "requests>=2.31.0"
-]
+Documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
+Issues = "https://github.com/jonigl/ollama-mcp-bridge/issues"
+Source = "https://github.com/jonigl/ollama-mcp-bridge"
 
 [project.scripts]
 ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
 
-[build-system]
-requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
+[tool.hatch.version]
+source = 'vcs'
 
-[tool.setuptools_scm]
-write_to = "src/ollama_mcp_bridge/_version.py"
+[tool.hatch.build.targets.wheel]
+packages = ["src/ollama_mcp_bridge"]
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-packages = ["ollama_mcp_bridge"]
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "requests>=2.32.4",
+]
