@@ -30,7 +30,7 @@ jobs:
         run: uv venv
 
       - name: Install build dependencies
-        run: uv pip install build twine
+        run: uv pip install build twine setuptools_scm
 
       - name: Build package
         run: uv run python -m build
