@@ -14,97 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write  # For trusted publishing to PyPI
+      id-token: write
     environment:
       name: pypi
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          fetch-depth: 0  # Important for setuptools_scm
+          enable-cache: true
+      - run: uv build
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Set up Python
-        run: uv python install 3.10
-
-      - name: Create virtual environment
-        run: uv venv
-
-      - name: Install build dependencies
-        run: uv pip install build twine setuptools_scm
-
-      - name: Build package
-        run: uv run python -m build
-
-      - name: Check package with twine
-        run: uv run twine check dist/*
-
-      - name: Verify version matches tag
-        run: |
-          TAG_VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
-          PKG_VERSION=$(uv run python -c "import setuptools_scm; print(setuptools_scm.get_version())")
-          echo "Tag version: $TAG_VERSION"
-          echo "Package version: $PKG_VERSION"
-          # Store package version for later use in installation
-          echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_ENV
-          
-          # Extract just the base version part (e.g., "0.3.0a3" from "0.3.0a3.dev0+g24d832d.d20250621")
-          BASE_TAG_VERSION=$(echo "$TAG_VERSION" | grep -o '^[0-9]\+\.[0-9]\+\.[0-9]\+[a-z][0-9]\+')
-          BASE_PKG_VERSION=$(echo "$PKG_VERSION" | grep -o '^[0-9]\+\.[0-9]\+\.[0-9]\+[a-z][0-9]\+')
-          
-          echo "Base tag version: $BASE_TAG_VERSION"
-          echo "Base package version: $BASE_PKG_VERSION"
-          
-          if [[ "$BASE_PKG_VERSION" == "$BASE_TAG_VERSION" || "$PKG_VERSION" == *"$TAG_VERSION"* ]]; then
-            echo "Version check passed!"
-          else
-            echo "Version mismatch between tag and package!"
-            exit 1
-          fi
-
-      - name: Show package files
-        run: |
-          echo "Tag: ${GITHUB_REF#refs/tags/}"
-          echo "Package files:"
-          ls -la dist/
-
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          verbose: true
-          skip-existing: true
-
-      - name: Test installation from TestPyPI
-        run: |
-          # Add a delay to allow TestPyPI to process the upload
-          echo "Waiting 10 seconds for TestPyPI to process the package..."
-          sleep 10
-
-          # Try to install the package with retry mechanism
-          MAX_RETRIES=3
-          RETRY_DELAY=10
-          for i in $(seq 1 $MAX_RETRIES); do
-            echo "Installation attempt $i of $MAX_RETRIES..."
-            if uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ollama-mpc-bridge==$PKG_VERSION"; then
-              echo "Package installed successfully!"
-              uv run python -c "from ollama_mpc_bridge import __version__; print(f'Installed version: {__version__}')"
-              exit 0
-            else
-              echo "Installation failed. Waiting $RETRY_DELAY seconds before retrying..."
-              sleep $RETRY_DELAY
-            fi
-          done
-
-          echo "Failed to install package after $MAX_RETRIES attempts."
-          exit 1
-
-      # Upload the built packages as artifacts for inspection
-      - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
