@@ -32,6 +32,9 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = 'vcs'
 
+[tool.hatch.build.hooks.vcs]
+version-file = "src/ollama_mcp_bridge/_version.py"
+
 [project.scripts]
 ollama-mcp-bridge = "ollama_mcp_bridge.main:main"
 
