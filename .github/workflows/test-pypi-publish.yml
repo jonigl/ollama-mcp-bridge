@@ -46,7 +46,17 @@ jobs:
           echo "Package version: $PKG_VERSION"
           # Store package version for later use in installation
           echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_ENV
-          if [[ "$PKG_VERSION" != *"$TAG_VERSION"* ]]; then
+          
+          # Extract just the base version part (e.g., "0.3.0a3" from "0.3.0a3.dev0+g24d832d.d20250621")
+          BASE_TAG_VERSION=$(echo "$TAG_VERSION" | grep -o '^[0-9]\+\.[0-9]\+\.[0-9]\+[a-z][0-9]\+')
+          BASE_PKG_VERSION=$(echo "$PKG_VERSION" | grep -o '^[0-9]\+\.[0-9]\+\.[0-9]\+[a-z][0-9]\+')
+          
+          echo "Base tag version: $BASE_TAG_VERSION"
+          echo "Base package version: $BASE_PKG_VERSION"
+          
+          if [[ "$BASE_PKG_VERSION" == "$BASE_TAG_VERSION" || "$PKG_VERSION" == *"$TAG_VERSION"* ]]; then
+            echo "Version check passed!"
+          else
             echo "Version mismatch between tag and package!"
             exit 1
           fi
