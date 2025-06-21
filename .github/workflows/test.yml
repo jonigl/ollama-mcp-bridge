@@ -42,4 +42,4 @@ jobs:
       - name: Test version detection
         run: |
           uv tool install .
-          ollama_mcp_bridge --version
+          ollama-mcp-bridge --version
