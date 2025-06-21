@@ -3,7 +3,9 @@ name: TestPyPI Publish
 on:
   push:
     tags:
-      - 'v*-test*'  # Trigger on test tags like v0.2.0-test1
+      - 'v*a*'   # Trigger on alpha releases like v0.3.0a1
+      - 'v*b*'   # Trigger on beta releases like v0.3.0b1
+      - 'v*rc*'  # Trigger on release candidates like v0.3.0rc1
 
 jobs:
   test-publish:
@@ -36,10 +38,21 @@ jobs:
       - name: Check package with twine
         run: uv run twine check dist/*
 
-      - name: Show version information
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          PKG_VERSION=$(uv run python -c "import setuptools_scm; print(setuptools_scm.get_version())")
+          echo "Tag version: $TAG_VERSION"
+          echo "Package version: $PKG_VERSION"
+          if [[ "$PKG_VERSION" != *"$TAG_VERSION"* ]]; then
+            echo "Version mismatch between tag and package!"
+            exit 1
+          fi
+
+      - name: Show package files
         run: |
           echo "Tag: ${GITHUB_REF#refs/tags/}"
-          echo "Package versions:"
+          echo "Package files:"
           ls -la dist/
 
       - name: Publish to TestPyPI
@@ -72,3 +85,10 @@ jobs:
 
           echo "Failed to install package after $MAX_RETRIES attempts."
           exit 1
+
+      # Upload the built packages as artifacts for inspection
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
