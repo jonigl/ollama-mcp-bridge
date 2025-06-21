@@ -4,17 +4,17 @@ import uvicorn
 from loguru import logger
 
 from ollama_mcp_bridge.api import app
-from ollama_mcp_bridge.utils import check_ollama_health
-
+from ollama_mcp_bridge.utils import check_ollama_health, validate_cli_inputs
 
 def cli_app(
-    config: str = typer.Option("./mcp-servers-config/mcp-config.json", "--config", help="Path to MCP config JSON file"),
+    config: str = typer.Option("mcp-config.json", "--config", help="Path to MCP config JSON file"),
     host: str = typer.Option("0.0.0.0", "--host", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
     ollama_url: str = typer.Option("http://localhost:11434", "--ollama-url", help="Ollama server URL"),
     reload: bool = typer.Option(False, "--reload", help="Enable auto-reload")
 ):
-    """Start the MCP proxy server with Ollama REST API compatibility and MCP tool integration"""
+    """Start the API proxy server with Ollama REST API compatibility and MCP tool integration"""
+    validate_cli_inputs(config, host, port, ollama_url)
     # Store config in app state so lifespan can access it
     app.state.config_file = config
     app.state.ollama_url = ollama_url

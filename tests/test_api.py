@@ -35,3 +35,15 @@ def test_chat_endpoint_structure():
     data = response.json()
     assert "message" in data
     assert "content" in data["message"]
+
+def test_tags_endpoint():
+    """Test that the tags endpoint proxies correctly and returns a models list"""
+    response = requests.get(f"{API_BASE}/api/tags", timeout=10)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "models" in data
+    assert isinstance(data["models"], list)
+    # Optionally check that each model is a dict
+    for model in data["models"]:
+        assert isinstance(model, dict)

@@ -6,6 +6,7 @@ from loguru import logger
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from contextlib import AsyncExitStack
+import os
 
 
 class MCPManager:
@@ -25,20 +26,22 @@ class MCPManager:
 
     async def load_servers(self, config_path: str):
         """Load and connect to all MCP servers from config"""
+        config_dir = os.path.dirname(os.path.abspath(config_path))
         with open(config_path, encoding='utf-8') as f:
             config = json.load(f)
         for name, server_config in config['mcpServers'].items():
-            try:
-                await self._connect_server(name, server_config)
-            except Exception as e:
-                logger.error(f"Failed to connect to {name}: {e}")
+            resolved_config = dict(server_config)
+            resolved_config['cwd'] = config_dir
+            await self._connect_server(name, resolved_config)
 
     async def _connect_server(self, name: str, config: dict):
         """Connect to a single MCP server"""
         params = StdioServerParameters(
+
             command=config['command'],
             args=config['args'],
-            env=config.get('env')
+            env=config.get('env'),
+            cwd=config.get('cwd')
         )
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
         stdio, write = stdio_transport
@@ -50,7 +53,7 @@ class MCPManager:
             tool_def = {
                 "type": "function",
                 "function": {
-                    "name": f"{name}_{tool.name}",
+                    "name": f"{name}.{tool.name}",
                     "description": tool.description,
                     "parameters": tool.inputSchema
                 },
