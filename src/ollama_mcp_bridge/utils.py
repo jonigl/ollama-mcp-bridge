@@ -73,7 +73,7 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
     if not url_pattern.match(ollama_url):
         raise BadParameter(f"Invalid Ollama URL: {ollama_url}")
 
-async def check_for_updates(current_version: str, print_message: bool = False) -> str | None:
+async def check_for_updates(current_version: str, print_message: bool = False) -> str:
     """
     Check if a newer version of ollama-mcp-bridge is available on PyPI.
 
@@ -82,7 +82,7 @@ async def check_for_updates(current_version: str, print_message: bool = False) -
         print_message: If True, print the update message to stdout instead of logging
 
     Returns:
-        str | None: The latest version if an update is available, None otherwise
+        str: The latest version if an update is available, otherwise the current version
     """
     try:
         async with httpx.AsyncClient() as client:
@@ -113,11 +113,9 @@ async def check_for_updates(current_version: str, print_message: bool = False) -
                         logger.info(update_msg)
                         logger.info(upgrade_msg)
 
-                    return latest_version
+                return latest_version
 
-                return None
-
-            return None
+            return current_version  # Return current version when response doesn't match expected structure
     except (httpx.HTTPError, json.JSONDecodeError, pkg_version.InvalidVersion) as e:
         logger.debug(f"Failed to check for updates: {e}")
-        return None
+        return current_version  # Return current version when check fails
