@@ -6,7 +6,7 @@ on:
     types:
       - created
 jobs:
-  test-publish:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
