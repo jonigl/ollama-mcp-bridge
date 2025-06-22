@@ -7,13 +7,15 @@ import httpx
 
 from .lifecycle import lifespan, get_proxy_service
 from .schemas import CHAT_EXAMPLE
+from .utils import check_for_updates
+from . import __version__
 
 
 # Create FastAPI app
 app = FastAPI(
     title="Ollama MCP Bridge",
     description="Simple API proxy server with Ollama REST API compatibility and MCP tool integration",
-    version="0.2.0",
+    version=__version__,
     lifespan=lifespan
 )
 
@@ -74,3 +76,14 @@ async def proxy_to_ollama(
                             detail=f"Could not connect to Ollama server: {str(e)}") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Proxy request failed: {str(e)}") from e
+
+
+@app.get("/version", summary="Version information", description="Get version information and check for updates.")
+async def version():
+    """Version information endpoint."""
+    latest_version = await check_for_updates(__version__)
+
+    return {
+        "version": __version__,
+        "latest_version": latest_version
+    }

@@ -3,8 +3,10 @@ import os
 import json
 import re
 import httpx
+import typer
 from typer import BadParameter
 from loguru import logger
+from packaging import version as pkg_version
 
 
 def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
@@ -70,3 +72,52 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
     url_pattern = re.compile(r"^https?://[\w\.-]+(:\d+)?")
     if not url_pattern.match(ollama_url):
         raise BadParameter(f"Invalid Ollama URL: {ollama_url}")
+
+async def check_for_updates(current_version: str, print_message: bool = False) -> str | None:
+    """
+    Check if a newer version of ollama-mcp-bridge is available on PyPI.
+
+    Args:
+        current_version: The current version of the package
+        print_message: If True, print the update message to stdout instead of logging
+
+    Returns:
+        str | None: The latest version if an update is available, None otherwise
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://pypi.org/pypi/ollama-mcp-bridge/json",
+                timeout=5
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                latest_version = data.get("info", {}).get("version", "0.0.0")
+
+                # Compare versions
+                current_v = pkg_version.parse(current_version)
+                latest_v = pkg_version.parse(latest_version)
+
+                if latest_v > current_v:
+                    upgrade_cmd = "pip install --upgrade ollama-mcp-bridge"
+
+                    # Show message based on requested output method
+                    update_msg = f"📦 Update available: v{current_version} → v{latest_version}"
+                    upgrade_msg = f"To upgrade, run: {upgrade_cmd}"
+
+                    if print_message:
+                        typer.echo(typer.style(update_msg, fg=typer.colors.BRIGHT_GREEN, bold=True))
+                        typer.echo(typer.style(upgrade_msg, fg=typer.colors.BRIGHT_MAGENTA, bold=True))
+                    else:
+                        logger.info(update_msg)
+                        logger.info(upgrade_msg)
+
+                    return latest_version
+
+                return None
+
+            return None
+    except (httpx.HTTPError, json.JSONDecodeError, pkg_version.InvalidVersion) as e:
+        logger.debug(f"Failed to check for updates: {e}")
+        return None
