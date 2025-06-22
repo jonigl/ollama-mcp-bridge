@@ -54,6 +54,15 @@ async def chat(
         logger.error(f"/api/chat failed: {e}")
         raise HTTPException(status_code=500, detail=f"/api/chat failed: {str(e)}") from e
 
+@app.get("/version", summary="Version information", description="Get version information and check for updates.")
+async def version():
+    """Version information endpoint."""
+    latest_version = await check_for_updates(__version__)
+
+    return {
+        "version": __version__,
+        "latest_version": latest_version
+    }
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
                summary="Transparent proxy", description="Transparent proxy to any Ollama endpoint.",
@@ -76,14 +85,3 @@ async def proxy_to_ollama(
                             detail=f"Could not connect to Ollama server: {str(e)}") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Proxy request failed: {str(e)}") from e
-
-
-@app.get("/version", summary="Version information", description="Get version information and check for updates.")
-async def version():
-    """Version information endpoint."""
-    latest_version = await check_for_updates(__version__)
-
-    return {
-        "version": __version__,
-        "latest_version": latest_version
-    }
