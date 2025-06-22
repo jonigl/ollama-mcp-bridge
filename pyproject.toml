@@ -16,6 +16,7 @@ dependencies = [
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "mcp>=1.9.4",
+    "packaging>=23.0",
     "typer>=0.16.0",
     "uvicorn>=0.34.3",
 ]

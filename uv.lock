@@ -269,6 +269,7 @@ dependencies = [
     { name = "httpx" },
     { name = "loguru" },
     { name = "mcp" },
+    { name = "packaging" },
     { name = "typer" },
     { name = "uvicorn" },
 ]
@@ -285,6 +286,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "mcp", specifier = ">=1.9.4" },
+    { name = "packaging", specifier = ">=23.0" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "uvicorn", specifier = ">=0.34.3" },
 ]

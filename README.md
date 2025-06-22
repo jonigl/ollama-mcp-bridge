@@ -22,8 +22,9 @@
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
-- 🔄 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
+- 🔌 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
 - 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI
+- 🔄 **Version Check**: Automatic check for newer versions with upgrade instructions
 - 🌊 **Streaming Responses**: Supports incremental streaming of responses to clients
 - 🤔 **Thinking Mode**: Proxies intermediate "thinking" messages from Ollama and MCP tools
 - ⚡️ **FastAPI Backend**: Modern async API with automatic documentation
@@ -41,7 +42,7 @@
 
 ## Installation
 
-You can install `ollama-mcp-bridge` in two main ways:
+You can install `ollama-mcp-bridge` in several ways, depending on your preference:
 
 ### Quick Start
 Install instantly with [uvx](https://github.com/astral-sh/uv):
@@ -83,15 +84,16 @@ ollama-mcp-bridge
 ## How It Works
 
 1. **Startup**: All MCP servers defined in the configuration are loaded and connected
-2. **Tool Collection**: Tools from all servers are collected and made available to Ollama
-3. **Chat Completion Request (`/api/chat` endpoint only)**: When a chat completion request is received on `/api/chat`:
+2. **Version Check**: At startup, the bridge checks for newer versions and notifies if an update is available
+3. **Tool Collection**: Tools from all servers are collected and made available to Ollama
+4. **Chat Completion Request (`/api/chat` endpoint only)**: When a chat completion request is received on `/api/chat`:
    - The request is forwarded to Ollama along with the list of all available tools
    - If Ollama chooses to invoke any tools, those tool calls are executed through the corresponding MCP servers
    - Tool responses are fed back to Ollama
    - The final response (with tool results integrated) is returned to the client
    - **This is the only endpoint where MCP server tools are integrated.**
-4. **Other Endpoints**: All other endpoints (except `/api/chat` and `/health`) are fully proxied to the underlying Ollama server with no modification.
-5. **Logging**: All operations are logged using loguru for debugging and monitoring
+5. **Other Endpoints**: All other endpoints (except `/api/chat`, `/health`, and `/version`) are fully proxied to the underlying Ollama server with no modification.
+6. **Logging**: All operations are logged using loguru for debugging and monitoring
 
 ## Configuration
 
@@ -145,6 +147,9 @@ ollama-mcp-bridge --ollama-url http://192.168.1.100:11434
 
 # Combine options
 ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
+
+# Check version and available updates
+ollama-mcp-bridge --version
 ```
 
 > [!TIP]
@@ -155,9 +160,10 @@ ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url h
 
 ### CLI Options
 - `--config`: Path to MCP configuration file (default: `mcp-config.json`)
-- `--host`: Host to bind the server (default: `localhost`)
+- `--host`: Host to bind the server (default: `0.0.0.0`)
 - `--port`: Port to bind the server (default: `8000`)
 - `--ollama-url`: Ollama server URL (default: `http://localhost:11434`)
+- `--version`: Show version information, check for updates and exit
 
 ### API Usage
 
@@ -167,12 +173,13 @@ The API is available at `http://localhost:8000`.
 - **Ollama-compatible endpoints:**
   - `POST /api/chat` — Chat endpoint (same as Ollama API, but with MCP tool support)
     - **This is the only endpoint where MCP server tools are integrated.** All tool calls are handled and responses are merged transparently for the client.
-  - **All other endpoints** (except `/api/chat` and `/health`) are fully proxied to the underlying Ollama server with no modification. You can use your existing Ollama clients and libraries as usual.
-- **Health check:**
-  - `GET /health` — Specific to `ollama-mcp-bridge` (not proxied)
+  - **All other endpoints** (except `/api/chat`, `/health`, and `/version`) are fully proxied to the underlying Ollama server with no modification. You can use your existing Ollama clients and libraries as usual.
+- **Bridge-specific endpoints:**
+  - `GET /health` — Health check endpoint (not proxied)
+  - `GET /version` — Version information and update check
 
 > [!IMPORTANT]
-> `/api/chat` is the only endpoint with MCP tool integration. All other endpoints are transparently proxied to Ollama. `/health` is specific to the bridge.
+> `/api/chat` is the only endpoint with MCP tool integration. All other endpoints are transparently proxied to Ollama. `/health` and `/version` are specific to the bridge.
 
 This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every `/api/chat` request. You can use your existing Ollama clients and libraries, just point them to this bridge instead of your Ollama server.
 
@@ -253,6 +260,9 @@ These tests check:
 ```bash
 # Quick manual test with curl (server must be running)
 curl -X GET "http://localhost:8000/health"
+
+# Check version information and update status
+curl -X GET "http://localhost:8000/version"
 
 curl -X POST "http://localhost:8000/api/chat" \
   -H "Content-Type: application/json" \
