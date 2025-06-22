@@ -37,7 +37,7 @@
 
 - Python >= 3.10.15
 - Ollama server running (local or remote)
-- MCP server scripts configured in `mcp-servers-config/mcp-config.json`
+- MCP server configuration file with at least one MCP server defined (see below for example)
 
 ## Installation
 
@@ -148,10 +148,7 @@ ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url h
 ```
 
 > [!TIP]
-> If installing with `uv`, you can run the bridge directly using:
-> ```bash
-> ollama-mcp-bridge --config /path/to/custom-config.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
-> ```
+> If using `uvx` to run the bridge, you have to specify the command as `uvx ollama-mcp-bridge` instead of just `ollama-mcp-bridge`.
 
 > [!NOTE]
 > This bridge supports both streaming responses and thinking mode. You receive incremental responses as they are generated, with tool calls and intermediate thinking messages automatically proxied between Ollama and all connected MCP tools.
