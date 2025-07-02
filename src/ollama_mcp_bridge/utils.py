@@ -18,7 +18,7 @@ def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
             return True
         logger.error(f"Ollama server not accessible at {ollama_url}")
         return False
-    except Exception as e:
+    except (httpx.ConnectError, httpx.ReadTimeout, httpx.HTTPError) as e:
         logger.error(f"Failed to connect to Ollama: {e}")
         return False
 
@@ -31,7 +31,7 @@ async def check_ollama_health_async(ollama_url: str, timeout: int = 3) -> bool:
                 return True
             logger.error(f"Ollama server not accessible at {ollama_url}")
             return False
-    except Exception as e:
+    except (httpx.ConnectError, httpx.ReadTimeout, httpx.HTTPError) as e:
         logger.error(f"Failed to connect to Ollama: {e}")
         return False
 
@@ -45,13 +45,13 @@ async def iter_ndjson_chunks(chunk_iterator):
             if line.strip():
                 try:
                     yield json.loads(line)
-                except Exception as e:
+                except json.JSONDecodeError as e:
                     logger.debug(f"Error parsing NDJSON line: {e}")
     # Handle any trailing data
     if buffer.strip():
         try:
             yield json.loads(buffer)
-        except Exception as e:
+        except json.JSONDecodeError as e:
             logger.debug(f"Error parsing trailing NDJSON: {e}")
 
 def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
@@ -61,7 +61,7 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
         raise BadParameter(f"Config file not found: {config}")
 
     # Validate port
-    if not (1 <= port <= 65535):
+    if not 1 <= port <= 65535:
         raise BadParameter(f"Port must be between 1 and 65535, got {port}")
 
     # Validate host (basic check)
