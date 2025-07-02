@@ -7,6 +7,32 @@ import typer
 from typer import BadParameter
 from loguru import logger
 from packaging import version as pkg_version
+from fastapi.middleware.cors import CORSMiddleware
+import sys
+
+
+def configure_cors(app):
+    """Configure CORS middleware for the FastAPI app."""
+
+    cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+    cors_origins = [origin.strip() for origin in cors_origins]
+
+    # Don't log CORS config if the user is checking the version
+    is_version_check = any('--version' in arg for arg in sys.argv)
+
+    if not is_version_check:
+        if cors_origins == ["*"]:
+            logger.warning("CORS is configured to allow ALL origins (*). This is not recommended for production.")
+        else:
+            logger.info(f"CORS configured to allow origins: {cors_origins}")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
