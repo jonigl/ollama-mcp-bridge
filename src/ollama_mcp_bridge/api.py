@@ -1,15 +1,13 @@
 """FastAPI application"""
-import os
 from typing import Dict, Any
 import httpx
 from fastapi import FastAPI, HTTPException, Body, status, Request
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from .lifecycle import lifespan, get_proxy_service
 from .schemas import CHAT_EXAMPLE
-from .utils import check_for_updates
+from .utils import check_for_updates, configure_cors
 from . import __version__
 
 
@@ -21,24 +19,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
-cors_origins = [origin.strip() for origin in cors_origins]
-
-# Log CORS configuration
-if cors_origins == ["*"]:
-    logger.warning("CORS is configured to allow ALL origins (*). This is not recommended for production.")
-else:
-    logger.info(f"CORS configured to allow origins: {cors_origins}")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# Configure CORS middleware
+configure_cors(app)
 
 @app.get("/health", summary="Health check", description="Check the health status of the MCP Proxy and Ollama server.")
 async def health():
@@ -74,6 +56,7 @@ async def chat(
         logger.error(f"/api/chat failed: {e}")
         raise HTTPException(status_code=500, detail=f"/api/chat failed: {str(e)}") from e
 
+
 @app.get("/version", summary="Version information", description="Get version information and check for updates.")
 async def version():
     """Version information endpoint."""
@@ -83,6 +66,7 @@ async def version():
         "version": __version__,
         "latest_version": latest_version
     }
+
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
                summary="Transparent proxy", description="Transparent proxy to any Ollama endpoint.",
