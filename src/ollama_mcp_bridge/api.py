@@ -1,9 +1,11 @@
 """FastAPI application"""
+import os
 from typing import Dict, Any
+import httpx
 from fastapi import FastAPI, HTTPException, Body, status, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-import httpx
 
 from .lifecycle import lifespan, get_proxy_service
 from .schemas import CHAT_EXAMPLE
@@ -17,6 +19,24 @@ app = FastAPI(
     description="Simple API proxy server with Ollama REST API compatibility and MCP tool integration",
     version=__version__,
     lifespan=lifespan
+)
+
+# Configure CORS
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+cors_origins = [origin.strip() for origin in cors_origins]
+
+# Log CORS configuration
+if cors_origins == ["*"]:
+    logger.warning("CORS is configured to allow ALL origins (*). This is not recommended for production.")
+else:
+    logger.info(f"CORS configured to allow origins: {cors_origins}")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

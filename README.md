@@ -15,6 +15,27 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
+  - [Or, install from source](#or-install-from-source)
+- [How It Works](#how-it-works)
+- [Configuration](#configuration)
+  - [MCP Servers Configuration](#mcp-servers-configuration)
+  - [CORS Configuration](#cors-configuration)
+- [Usage](#usage)
+  - [Start the Server](#start-the-server)
+  - [CLI Options](#cli-options)
+  - [API Usage](#api-usage)
+  - [Example: Chat](#example-chat)
+- [Development](#development)
+  - [Key Dependencies](#key-dependencies)
+  - [Testing](#testing)
+- [Inspiration and Credits](#inspiration-and-credits)
 
 ## Features
 
@@ -97,6 +118,8 @@ ollama-mcp-bridge
 
 ## Configuration
 
+### MCP Servers Configuration
+
 Create an MCP configuration file at `mcp-servers-config/mcp-config.json` with your servers:
 
 ```json
@@ -125,6 +148,34 @@ Create an MCP configuration file at `mcp-servers-config/mcp-config.json` with yo
   }
 }
 ```
+
+### CORS Configuration
+
+Configure Cross-Origin Resource Sharing (CORS) to allow requests from your frontend applications:
+
+```bash
+# Allow all origins (default, not recommended for production)
+ollama-mcp-bridge
+
+# Allow specific origins
+CORS_ORIGINS="http://localhost:3000,https://myapp.com" ollama-mcp-bridge
+
+# Allow multiple origins with different ports
+CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.com" ollama-mcp-bridge
+```
+
+**Environment Variables:**
+- `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
+  - `*` allows all origins (shows warning in logs)
+  - Specific origins like `http://localhost:3000,https://myapp.com` for production
+
+**CORS Logging:**
+- The bridge logs CORS configuration at startup
+- Shows warning when using `*` (all origins)
+- Shows allowed origins when properly configured
+
+> [!WARNING]
+> Using `CORS_ORIGINS="*"` allows all origins and is not recommended for production. Always specify exact origins for security.
 
 > [!NOTE]
 > An example MCP server script is provided at `mcp-servers-config/mock-weather-mcp-server.py`.

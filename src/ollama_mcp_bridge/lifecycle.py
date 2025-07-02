@@ -56,15 +56,15 @@ async def lifespan(fastapi_app: FastAPI):
     try:
         if proxy_service:
             await proxy_service.cleanup()
-    except (IOError, httpx.HTTPError) as e:
+    except (IOError, httpx.HTTPError, ConnectionError, TimeoutError) as e:
         logger.error(f"Error during proxy service cleanup: {str(e)}")
-    except Exception as e:
+    except (ValueError, AttributeError, RuntimeError) as e:
         logger.error(f"Unexpected error during cleanup: {str(e)}")
 
     try:
         if mcp_manager:
             await mcp_manager.cleanup()
-    except Exception as e:
+    except (IOError, ConnectionError, TimeoutError) as e:
         logger.error(f"Error during MCP manager cleanup: {str(e)}")
 
     # Reset globals
