@@ -35,6 +35,7 @@
 - [Development](#development)
   - [Key Dependencies](#key-dependencies)
   - [Testing](#testing)
+- [Related Projects](#related-projects)
 - [Inspiration and Credits](#inspiration-and-credits)
 
 ## Features
@@ -322,6 +323,10 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 > [!NOTE]
 > Tests require the server to be running on localhost:8000. Make sure to start the server before running pytest.
+
+## Related Projects
+
+- [**MCP Client for Ollama**](https://github.com/jonigl/mcp-client-for-ollama) - A text-based user interface (TUI) client for interacting with MCP servers using Ollama. Features include multi-server support, dynamic model switching, streaming responses, tool management, human-in-the-loop capabilities, thinking mode, full model parameters configuration, custom system prompt and saved preferences. Built for developers working with local LLMs.
 
 ## Inspiration and Credits
 
