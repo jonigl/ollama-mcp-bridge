@@ -1,0 +1,13 @@
+services:
+  ollama-mcp-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - CORS_ORIGINS=*
+    volumes:
+      - ./mcp-servers-config:/usr/src/app/mcp-servers-config
+    restart: unless-stopped
