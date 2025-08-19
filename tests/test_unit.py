@@ -116,7 +116,7 @@ def test_imports():
 
 def test_example_config_structure():
     """Test that the example config file has the correct structure"""
-    config_path = Path(__file__).parent.parent / "mcp-servers-config" / "mcp-config.json"
+    config_path = Path(__file__).parent.parent / "mcp-config.json"
 
     if config_path.exists():
         with open(config_path, 'r', encoding='utf-8') as f:
