@@ -1,8 +1,16 @@
 {
-    "mcpServers": {
-        "ddg-search": {
-            "command": "uvx",
-            "args": ["duckduckgo-mcp-server"]
-        }
+  "mcpServers": {
+    "weather": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "./mock-weather-mcp-server",
+        "run",
+        "main.py"
+      ],
+      "env": {
+        "MCP_LOG_LEVEL": "ERROR"
+      }
     }
+  }
 }
