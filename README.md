@@ -22,6 +22,8 @@
 - [Installation](#installation)
   - [Quick Start](#quick-start)
   - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
+  - [Or, run with Docker Compose](#or-run-with-docker-compose)
+  - [Or, run with Docker only](#or-run-with-docker-only)
   - [Or, install from source](#or-install-from-source)
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
@@ -77,6 +79,19 @@ uvx ollama-mcp-bridge
 pip install --upgrade ollama-mcp-bridge
 ```
 
+### Or, run with Docker Compose
+
+```bash
+docker-compose up
+```
+
+This uses the included [docker-compose.yml](./docker-compose.yml) file which:
+- Builds the bridge from source using this Dockerfile [Dockerfile](./Dockerfile)
+- Connects to Ollama running on the host machine (`host.docker.internal:11434`)
+- Maps the configuration file from [./mcp-config.json](./mcp-config.json) (includes mock [weather server for demo](./mock-weather-mcp-server))
+- Allows all CORS origins (configurable via `CORS_ORIGINS` environment variable)
+
+
 ### Or, install from source
 
 ```bash
@@ -121,7 +136,7 @@ ollama-mcp-bridge
 
 ### MCP Servers Configuration
 
-Create an MCP configuration file at `mcp-servers-config/mcp-config.json` with your servers:
+Create an MCP configuration file at `mcp-config.json` with your servers:
 
 ```json
 {
@@ -130,9 +145,9 @@ Create an MCP configuration file at `mcp-servers-config/mcp-config.json` with yo
       "command": "uv",
       "args": [
         "--directory",
-        ".",
+        "./mock-weather-mcp-server",
         "run",
-        "mock-weather-mcp-server.py"
+        "main.py"
       ],
       "env": {
         "MCP_LOG_LEVEL": "ERROR"
@@ -179,13 +194,13 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
 > Using `CORS_ORIGINS="*"` allows all origins and is not recommended for production. Always specify exact origins for security.
 
 > [!NOTE]
-> An example MCP server script is provided at `mcp-servers-config/mock-weather-mcp-server.py`.
+> An example MCP server script is provided at [mock-weather-mcp-server/main.py](mock-weather-mcp-server/main.py).
 
 ## Usage
 
 ### Start the Server
 ```bash
-# Start with default settings (config: mcp-servers-config/mcp-config.json, host: 0.0.0.0, port: 8000)
+# Start with default settings (config: ./mcp-config.json, host: 0.0.0.0, port: 8000)
 ollama-mcp-bridge
 
 # Start with custom configuration file

@@ -4,9 +4,9 @@
       "command": "uv",
       "args": [
         "--directory",
-        ".",
+        "./mock-weather-mcp-server",
         "run",
-        "mock-weather-mcp-server.py"
+        "main.py"
       ],
       "env": {
         "MCP_LOG_LEVEL": "ERROR"

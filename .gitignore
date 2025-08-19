@@ -11,3 +11,4 @@ wheels/
 
 # Dynamic package version
 _version.py
+.vscode
