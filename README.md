@@ -17,32 +17,26 @@
 
 ## Table of Contents
 
-- [Ollama MCP Bridge](#ollama-mcp-bridge)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-    - [Quick Start](#quick-start)
-    - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
-    - [Or, install from source](#or-install-from-source)
-    - [Or, install from a Docker](#or-install-from-a-docker)
-  - [How It Works](#how-it-works)
-  - [Configuration](#configuration)
-    - [MCP Servers Configuration](#mcp-servers-configuration)
-    - [CORS Configuration](#cors-configuration)
-  - [Usage](#usage)
-    - [Start the Server](#start-the-server)
-    - [CLI Options](#cli-options)
-    - [API Usage](#api-usage)
-    - [Example: Chat](#example-chat)
-  - [Development](#development)
-    - [Key Dependencies](#key-dependencies)
-    - [Testing](#testing)
-      - [Unit Tests (GitHub Actions compatible)](#unit-tests-github-actions-compatible)
-      - [Integration Tests (require running services)](#integration-tests-require-running-services)
-      - [Manual Testing](#manual-testing)
-  - [Related Projects](#related-projects)
-  - [Inspiration and Credits](#inspiration-and-credits)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
+  - [Or, install from source](#or-install-from-source)
+- [How It Works](#how-it-works)
+- [Configuration](#configuration)
+  - [MCP Servers Configuration](#mcp-servers-configuration)
+  - [CORS Configuration](#cors-configuration)
+- [Usage](#usage)
+  - [Start the Server](#start-the-server)
+  - [CLI Options](#cli-options)
+  - [API Usage](#api-usage)
+  - [Example: Chat](#example-chat)
+- [Development](#development)
+  - [Key Dependencies](#key-dependencies)
+  - [Testing](#testing)
+- [Related Projects](#related-projects)
+- [Inspiration and Credits](#inspiration-and-credits)
 
 ## Features
 
@@ -108,10 +102,6 @@ uv tool install --editable .
 # Run it like this:
 ollama-mcp-bridge
 ```
-
-### Or, install from a Docker
-
-```docker compose up -d```
 
 ## How It Works
 
