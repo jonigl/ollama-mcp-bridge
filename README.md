@@ -22,6 +22,8 @@
 - [Installation](#installation)
   - [Quick Start](#quick-start)
   - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
+  - [Or, run with Docker Compose](#or-run-with-docker-compose)
+  - [Or, run with Docker only](#or-run-with-docker-only)
   - [Or, install from source](#or-install-from-source)
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
@@ -76,6 +78,19 @@ uvx ollama-mcp-bridge
 ```bash
 pip install --upgrade ollama-mcp-bridge
 ```
+
+### Or, run with Docker Compose
+
+```bash
+docker-compose up
+```
+
+This uses the included [docker-compose.yml](./docker-compose.yml) file which:
+- Builds the bridge from source using this Dockerfile [Dockerfile](./Dockerfile)
+- Connects to Ollama running on the host machine (`host.docker.internal:11434`)
+- Maps the configuration file from [./mcp-config.json](./mcp-config.json) (includes mock [weather server for demo](./mock-weather-mcp-server))
+- Allows all CORS origins (configurable via `CORS_ORIGINS` environment variable)
+
 
 ### Or, install from source
 
