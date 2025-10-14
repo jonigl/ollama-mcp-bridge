@@ -11,4 +11,3 @@ services:
     volumes:
       - ./mcp-config.json:/root/mcp-config.json
     restart: unless-stopped
-    command: uv run ollama-mcp-bridge --ollama-url=http://host.docker.internal:11434

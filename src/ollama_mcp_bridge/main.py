@@ -1,5 +1,6 @@
 """Simple CLI entry point for MCP Proxy"""
 import asyncio
+import os
 import typer
 import uvicorn
 from loguru import logger
@@ -12,7 +13,7 @@ def cli_app(
     config: str = typer.Option("mcp-config.json", "--config", help="Path to MCP config JSON file"),
     host: str = typer.Option("0.0.0.0", "--host", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
-    ollama_url: str = typer.Option("http://localhost:11434", "--ollama-url", help="Ollama server URL"),
+    ollama_url: str = typer.Option(os.getenv("OLLAMA_URL", "http://localhost:11434"), "--ollama-url", help="Ollama server URL"),
     reload: bool = typer.Option(False, "--reload", help="Enable auto-reload"),
     version: bool = typer.Option(False, "--version", help="Show version information, check for updates and exit"),
 ):
