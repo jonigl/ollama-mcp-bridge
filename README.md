@@ -45,9 +45,11 @@
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
-- 🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
+- � **Multi-Round Tool Execution**: Automatically loops through multiple rounds of tool calls until completion
+- �🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
 - 🔌 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
-- 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI
+- 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI (supports local and cloud models)
+- ☁️ **Cloud Model Support**: Works with Ollama cloud models
 - 🔄 **Version Check**: Automatic check for newer versions with upgrade instructions
 - 🌊 **Streaming Responses**: Supports incremental streaming of responses to clients
 - 🤔 **Thinking Mode**: Proxies intermediate "thinking" messages from Ollama and MCP tools
@@ -124,10 +126,12 @@ ollama-mcp-bridge
 2. **Version Check**: At startup, the bridge checks for newer versions and notifies if an update is available
 3. **Tool Collection**: Tools from all servers are collected and made available to Ollama
 4. **Chat Completion Request (`/api/chat` endpoint only)**: When a chat completion request is received on `/api/chat`:
-   - The request is forwarded to Ollama along with the list of all available tools
+   - The request is forwarded to Ollama (local or cloud) along with the list of all available tools
    - If Ollama chooses to invoke any tools, those tool calls are executed through the corresponding MCP servers
    - Tool responses are fed back to Ollama
-   - The final response (with tool results integrated) is returned to the client
+   - The process repeats in a loop until no more tool calls are needed
+   - Responses stream to the client in real-time throughout the entire process
+   - The final response (with all tool results integrated) is returned to the client
    - **This is the only endpoint where MCP server tools are integrated.**
 5. **Other Endpoints**: All other endpoints (except `/api/chat`, `/health`, and `/version`) are fully proxied to the underlying Ollama server with no modification.
 6. **Logging**: All operations are logged using loguru for debugging and monitoring
@@ -165,7 +169,7 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
 }
 ```
 
-### CORS Configuration
+### CORS Configurationn
 
 Configure Cross-Origin Resource Sharing (CORS) to allow requests from your frontend applications:
 
@@ -209,7 +213,7 @@ ollama-mcp-bridge --config /path/to/custom-config.json
 # Custom host and port
 ollama-mcp-bridge --host 0.0.0.0 --port 8080
 
-# Custom Ollama server URL
+# Custom Ollama server URL (local or cloud)
 ollama-mcp-bridge --ollama-url http://192.168.1.100:11434
 
 # Combine options
@@ -248,7 +252,7 @@ The API is available at `http://localhost:8000`.
 > [!IMPORTANT]
 > `/api/chat` is the only endpoint with MCP tool integration. All other endpoints are transparently proxied to Ollama. `/health` and `/version` are specific to the bridge.
 
-This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every `/api/chat` request. You can use your existing Ollama clients and libraries, just point them to this bridge instead of your Ollama server.
+This bridge acts as a drop-in proxy for the Ollama API, but with all MCP tools from all connected servers available to every `/api/chat` request. The bridge automatically handles multiple rounds of tool execution until completion, streaming responses in real-time. You can use your existing Ollama clients and libraries with both local and cloud Ollama models, just point them to this bridge instead of your Ollama server.
 
 ### Example: Chat
 ```bash
