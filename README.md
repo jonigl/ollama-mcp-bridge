@@ -189,6 +189,9 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
 ```
 
 **Environment Variables:**
+- `OLLAMA_URL`: URL of the Ollama server (default: `http://localhost:11434`)
+  - Can be overridden with `--ollama-url` CLI parameter
+  - Useful for Docker deployments and configuration management
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
   - `*` allows all origins (shows warning in logs)
   - Specific origins like `http://localhost:3000,https://myapp.com` for production
