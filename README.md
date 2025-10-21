@@ -91,6 +91,18 @@ This uses the included [docker-compose.yml](./docker-compose.yml) file which:
 - Maps the configuration file from [./mcp-config.json](./mcp-config.json) (includes mock [weather server for demo](./mock-weather-mcp-server))
 - Allows all CORS origins (configurable via `CORS_ORIGINS` environment variable)
 
+**Platform-specific notes:**
+
+- **macOS & Windows (Docker Desktop)**: Works out of the box. The bridge connects to Ollama on your host using `host.docker.internal:11434`
+
+- **Linux**: By default, Ollama binds to `127.0.0.1:11434` (localhost only), which Docker containers cannot reach. To fix this, run Ollama with:
+  ```bash
+  OLLAMA_HOST=0.0.0.0:11434 ollama serve
+  ```
+  Then start the bridge:
+  ```bash
+  docker-compose up
+  ```
 
 ### Or, install from source
 
