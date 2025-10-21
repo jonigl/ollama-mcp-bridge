@@ -62,27 +62,30 @@ class ProxyService:
         """Handle non-streaming chat requests with tools"""
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
+        messages = payload.get("messages") or []
 
-        # First call to Ollama
-        resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=payload)
-        resp.raise_for_status()
-        result = resp.json()
+        # Loop to handle potentially multiple rounds of tool calls
+        while True:
+            # Call Ollama
+            current_payload = dict(payload)
+            current_payload["messages"] = messages
+            resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=current_payload)
+            resp.raise_for_status()
+            result = resp.json()
 
-        # Check for tool calls
-        tool_calls = self._extract_tool_calls(result)
-        if tool_calls:
-            messages = payload.get("messages") or []
+            # Check for tool calls
+            tool_calls = self._extract_tool_calls(result)
+            if not tool_calls:
+                # No more tool calls, return final result
+                return result
+
+            # Add assistant's response with tool calls
+            response_content = result.get("message", {}).get("content", "")
+            messages.append({"role": "assistant", "content": response_content, "tool_calls": tool_calls})
+
+            # Execute tool calls and add results to messages
             messages = await self._handle_tool_calls(messages, tool_calls)
-            followup_payload = dict(payload)
-            followup_payload["messages"] = messages
-            followup_payload.pop("tools", None)
-            final_resp = await self.http_client.post(
-                f"{self.mcp_manager.ollama_url}{endpoint}",
-                json=followup_payload
-            )
-            final_resp.raise_for_status()
-            return final_resp.json()
-        return result
+            # Continue loop to get next response
 
     async def _proxy_with_tools_streaming(self, endpoint: str, payload: Dict[str, Any]) -> AsyncGenerator[bytes, None]:
         """Handle streaming chat requests with tools"""
