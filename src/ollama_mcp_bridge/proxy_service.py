@@ -133,7 +133,7 @@ class ProxyService:
             logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
             messages.append({
                 "role": "tool",
-                "name": tool_name,
+                "tool_name": tool_name,
                 "content": tool_result
             })
         return messages
