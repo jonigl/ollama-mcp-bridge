@@ -165,6 +165,14 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
 }
 ```
 
+> [!WARNING]
+> **Docker Command Limitations**: When running in Docker, MCP servers should use commands available in the container:
+> - ✅ `npx` for Node.js-based MCP servers
+> - ✅ `uvx` for Python-based MCP servers
+> - ✅ Direct executables in the container
+> - ❌ `docker` commands (unless Docker-in-Docker is configured)
+> - ❌ Local file paths from your host machine
+
 ### CORS Configuration
 
 Configure Cross-Origin Resource Sharing (CORS) to allow requests from your frontend applications:
