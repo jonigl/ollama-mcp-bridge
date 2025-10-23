@@ -131,6 +131,32 @@ def test_example_config_structure():
             assert "args" in server_config
             assert isinstance(server_config["args"], list)
 
+def test_validate_cli_max_tool_rounds():
+    """Test that validate_cli_inputs enforces max_tool_rounds validation."""
+    try:
+        from ollama_mcp_bridge.utils import validate_cli_inputs
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from ollama_mcp_bridge.utils import validate_cli_inputs
+
+    # Valid case: None
+    validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", None)
+
+    # Invalid max_tool_rounds (zero)
+    from typer import BadParameter
+    try:
+        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", 0)
+        assert False, "Expected BadParameter for max_tool_rounds=0"
+    except BadParameter:
+        pass
+
+    # Invalid max_tool_rounds (negative)
+    try:
+        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", -1)
+        assert False, "Expected BadParameter for max_tool_rounds=-1"
+    except BadParameter:
+        pass
+
 def test_script_installed():
     try:
         result = subprocess.run(["ollama-mcp-bridge", "--help"], check=False)

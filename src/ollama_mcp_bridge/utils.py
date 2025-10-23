@@ -80,8 +80,8 @@ async def iter_ndjson_chunks(chunk_iterator):
         except json.JSONDecodeError as e:
             logger.debug(f"Error parsing trailing NDJSON: {e}")
 
-def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
-    """Validate CLI inputs for config file, host, port, and ollama_url."""
+def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_tool_rounds: int = None):
+    """Validate CLI inputs for config file, host, port, ollama_url, and max_tool_rounds."""
     # Validate config file exists
     if not os.path.isfile(config):
         raise BadParameter(f"Config file not found: {config}")
@@ -98,6 +98,10 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str):
     url_pattern = re.compile(r"^https?://[\w\.-]+(:\d+)?")
     if not url_pattern.match(ollama_url):
         raise BadParameter(f"Invalid Ollama URL: {ollama_url}")
+
+    # Validate max_tool_rounds
+    if max_tool_rounds is not None and max_tool_rounds < 1:
+        raise BadParameter(f"max_tool_rounds must be at least 1, got {max_tool_rounds}")
 
 async def check_for_updates(current_version: str, print_message: bool = False) -> str:
     """

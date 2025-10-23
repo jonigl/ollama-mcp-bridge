@@ -1,9 +1,10 @@
 """Simple CLI entry point for MCP Proxy"""
-import asyncio
 import os
+import asyncio
 import typer
 import uvicorn
 from loguru import logger
+from typing import Optional
 
 from .api import app
 from .utils import check_ollama_health, check_for_updates, validate_cli_inputs
@@ -14,6 +15,7 @@ def cli_app(
     host: str = typer.Option("0.0.0.0", "--host", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
     ollama_url: str = typer.Option(os.getenv("OLLAMA_URL", "http://localhost:11434"), "--ollama-url", help="Ollama server URL"),
+    max_tool_rounds: Optional[int] = typer.Option(os.getenv("MAX_TOOL_ROUNDS", None), "--max-tool-rounds", help="Maximum tool execution rounds (default: unlimited)"),
     reload: bool = typer.Option(False, "--reload", help="Enable auto-reload"),
     version: bool = typer.Option(False, "--version", help="Show version information, check for updates and exit"),
 ):
@@ -23,10 +25,12 @@ def cli_app(
         # Check for updates and print if available
         asyncio.run(check_for_updates(__version__, print_message=True))
         raise typer.Exit(0)
-    validate_cli_inputs(config, host, port, ollama_url)
+    validate_cli_inputs(config, host, port, ollama_url, max_tool_rounds)
+
     # Store config in app state so lifespan can access it
     app.state.config_file = config
     app.state.ollama_url = ollama_url
+    app.state.max_tool_rounds = max_tool_rounds
 
     logger.info(f"Starting MCP proxy server on {host}:{port}")
     logger.info(f"Using Ollama server: {ollama_url}")
