@@ -45,8 +45,9 @@
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
-- � **Multi-Round Tool Execution**: Automatically loops through multiple rounds of tool calls until completion
-- �🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
+- 🔄 **Multi-Round Tool Execution**: Automatically loops through multiple rounds of tool calls until completion
+- 🛡️ **Configurable Tool Limits**: Set maximum tool execution rounds to prevent excessive tool calls
+- 🛠️ **All Tools Available**: Ollama can use any tool from any connected server simultaneously
 - 🔌 **Complete API Compatibility**: `/api/chat` adds tools while all other Ollama API endpoints are transparently proxied
 - 🔧 **Configurable Ollama**: Specify custom Ollama server URL via CLI (supports local and cloud models)
 - ☁️ **Cloud Model Support**: Works with Ollama cloud models
@@ -193,12 +194,16 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
 ```
 
 **Environment Variables:**
+- `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
+  - `*` allows all origins (shows warning in logs)
+  - Example: `CORS_ORIGINS="http://localhost:3000,https://myapp.com" ollama-mcp-bridge`
+- `MAX_TOOL_ROUNDS`: Maximum number of tool execution rounds (default: unlimited)
+  - Can be overridden with `--max-tool-rounds` CLI parameter (CLI takes precedence)
+  - Example: `MAX_TOOL_ROUNDS=5 ollama-mcp-bridge`
 - `OLLAMA_URL`: URL of the Ollama server (default: `http://localhost:11434`)
   - Can be overridden with `--ollama-url` CLI parameter
   - Useful for Docker deployments and configuration management
-- `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
-  - `*` allows all origins (shows warning in logs)
-  - Specific origins like `http://localhost:3000,https://myapp.com` for production
+  - Example: `OLLAMA_URL=http://192.168.1.100:11434 ollama-mcp-bridge`
 
 **CORS Logging:**
 - The bridge logs CORS configuration at startup
@@ -227,8 +232,11 @@ ollama-mcp-bridge --host 0.0.0.0 --port 8080
 # Custom Ollama server URL (local or cloud)
 ollama-mcp-bridge --ollama-url http://192.168.1.100:11434
 
+# Limit tool execution rounds (prevents excessive tool calls)
+ollama-mcp-bridge --max-tool-rounds 5
+
 # Combine options
-ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
+ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434 --max-tool-rounds 10
 
 # Check version and available updates
 ollama-mcp-bridge --version
@@ -245,6 +253,8 @@ ollama-mcp-bridge --version
 - `--host`: Host to bind the server (default: `0.0.0.0`)
 - `--port`: Port to bind the server (default: `8000`)
 - `--ollama-url`: Ollama server URL (default: `http://localhost:11434`)
+- `--max-tool-rounds`: Maximum tool execution rounds (default: unlimited, can also be set via `MAX_TOOL_ROUNDS` environment variable)
+- `--reload`: Enable auto-reload during development
 - `--version`: Show version information, check for updates and exit
 
 ### API Usage

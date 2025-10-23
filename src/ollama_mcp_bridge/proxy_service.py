@@ -58,11 +58,35 @@ class ProxyService:
             logger.error(f"Chat proxy failed: {e}")
             raise
 
+    async def _make_final_llm_call(self, endpoint: str, payload: Dict[str, Any], messages: list) -> Dict[str, Any]:
+        """Make a final LLM call without tools to get final answer after tool execution"""
+        final_payload = dict(payload)
+        final_payload["messages"] = messages
+        final_payload["tools"] = None  # Don't allow more tool calls
+        resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=final_payload)
+        resp.raise_for_status()
+        return resp.json()
+
+    async def _stream_final_llm_call(self, stream_ollama, payload: Dict[str, Any], messages: list) -> AsyncGenerator[bytes, None]:
+        """Stream a final LLM call without tools to get final answer after tool execution"""
+        final_payload = dict(payload)
+        final_payload["messages"] = messages
+        final_payload["tools"] = None  # Don't allow more tool calls
+
+        ndjson_iter = iter_ndjson_chunks(stream_ollama(final_payload))
+        async for json_obj in ndjson_iter:
+            buffer_chunk = json.dumps(json_obj).encode() + b"\n"
+            yield buffer_chunk
+
     async def _proxy_with_tools_non_streaming(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Handle non-streaming chat requests with tools"""
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
         messages = payload.get("messages") or []
+
+        # Get max tool rounds from app state (None means unlimited)
+        max_rounds = getattr(self.mcp_manager, 'max_tool_rounds', None)
+        current_round = 0
 
         # Loop to handle potentially multiple rounds of tool calls
         while True:
@@ -85,6 +109,13 @@ class ProxyService:
 
             # Execute tool calls and add results to messages
             messages = await self._handle_tool_calls(messages, tool_calls)
+
+            # Check if we've reached the maximum number of rounds
+            current_round += 1
+            if max_rounds is not None and current_round >= max_rounds:
+                logger.warning(f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results")
+                return await self._make_final_llm_call(endpoint, payload, messages)
+
             # Continue loop to get next response
 
     async def _proxy_with_tools_streaming(self, endpoint: str, payload: Dict[str, Any]) -> AsyncGenerator[bytes, None]:
@@ -99,6 +130,10 @@ class ProxyService:
                 async with client.stream("POST", f"{self.mcp_manager.ollama_url}{endpoint}", json=payload_to_send) as resp:
                     async for chunk in resp.aiter_bytes():
                         yield chunk
+
+        # Get max tool rounds from app state (None means unlimited)
+        max_rounds = getattr(self.mcp_manager, 'max_tool_rounds', None)
+        current_round = 0
 
         # Loop to handle potentially multiple rounds of tool calls
         while True:
@@ -128,13 +163,22 @@ class ProxyService:
                 # No tool calls required, streaming complete
                 break
 
-            # Tool calls detected; execute them and loop for the follow-up response
+            # Tool calls detected; execute them
             messages.append({
                 "role": "assistant",
                 "content": response_text,
                 "tool_calls": tool_calls
             })
             messages = await self._handle_tool_calls(messages, tool_calls)
+
+            # Check if we've reached the maximum number of rounds
+            current_round += 1
+            if max_rounds is not None and current_round >= max_rounds:
+                logger.warning(f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results")
+                # Stream the final LLM response with tool results (no more tools allowed)
+                async for chunk in self._stream_final_llm_call(stream_ollama, payload, messages):
+                    yield chunk
+                break
 
     def _extract_tool_calls(self, result: Dict[str, Any]) -> list:
         """Extract tool calls from response"""
