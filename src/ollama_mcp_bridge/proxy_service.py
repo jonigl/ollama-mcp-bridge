@@ -62,32 +62,37 @@ class ProxyService:
         """Handle non-streaming chat requests with tools"""
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
+        messages = payload.get("messages") or []
 
-        # First call to Ollama
-        resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=payload)
-        resp.raise_for_status()
-        result = resp.json()
+        # Loop to handle potentially multiple rounds of tool calls
+        while True:
+            # Call Ollama
+            current_payload = dict(payload)
+            current_payload["messages"] = messages
+            resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=current_payload)
+            resp.raise_for_status()
+            result = resp.json()
 
-        # Check for tool calls
-        tool_calls = self._extract_tool_calls(result)
-        if tool_calls:
-            messages = payload.get("messages") or []
+            # Check for tool calls
+            tool_calls = self._extract_tool_calls(result)
+            if not tool_calls:
+                # No more tool calls, return final result
+                return result
+
+            # Add assistant's response with tool calls
+            response_content = result.get("message", {}).get("content", "")
+            messages.append({"role": "assistant", "content": response_content, "tool_calls": tool_calls})
+
+            # Execute tool calls and add results to messages
             messages = await self._handle_tool_calls(messages, tool_calls)
-            followup_payload = dict(payload)
-            followup_payload["messages"] = messages
-            followup_payload.pop("tools", None)
-            final_resp = await self.http_client.post(
-                f"{self.mcp_manager.ollama_url}{endpoint}",
-                json=followup_payload
-            )
-            final_resp.raise_for_status()
-            return final_resp.json()
-        return result
+            # Continue loop to get next response
 
     async def _proxy_with_tools_streaming(self, endpoint: str, payload: Dict[str, Any]) -> AsyncGenerator[bytes, None]:
         """Handle streaming chat requests with tools"""
+
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
+        messages = list(payload.get("messages") or [])
 
         async def stream_ollama(payload_to_send):
             async with httpx.AsyncClient(timeout=None) as client:
@@ -95,31 +100,48 @@ class ProxyService:
                     async for chunk in resp.aiter_bytes():
                         yield chunk
 
-        # First streaming request
-        tool_call_detected = False
-        ndjson_iter = iter_ndjson_chunks(stream_ollama(payload))
-        async for json_obj in ndjson_iter:
-            buffer_chunk = json.dumps(json_obj).encode() + b"\n"
-            yield buffer_chunk
-            tool_calls = self._extract_tool_calls(json_obj)
-            if tool_calls:
-                tool_call_detected = True
-                break  # Stop streaming initial response, go to tool call handling
+        # Loop to handle potentially multiple rounds of tool calls
+        while True:
+            current_payload = dict(payload)
+            current_payload["messages"] = messages
 
-        if tool_call_detected:
-            # Handle tool calls
-            messages = payload.get("messages") or []
+            tool_calls = []
+            response_text = ""
+
+            ndjson_iter = iter_ndjson_chunks(stream_ollama(current_payload))
+            async for json_obj in ndjson_iter:
+                # Stream all chunks directly to the client
+                buffer_chunk = json.dumps(json_obj).encode() + b"\n"
+                yield buffer_chunk
+
+                extracted_calls = self._extract_tool_calls(json_obj)
+                if extracted_calls:
+                    tool_calls = extracted_calls
+
+                if json_obj.get("done"):
+                    response_text = json_obj.get("message", {}).get("content", "")
+                    if extracted_calls:
+                        tool_calls = extracted_calls
+                    break
+
+            if not tool_calls:
+                # No tool calls required, streaming complete
+                break
+
+            # Tool calls detected; execute them and loop for the follow-up response
+            messages.append({
+                "role": "assistant",
+                "content": response_text,
+                "tool_calls": tool_calls
+            })
             messages = await self._handle_tool_calls(messages, tool_calls)
-            followup_payload = dict(payload)
-            followup_payload["messages"] = messages
-            followup_payload.pop("tools", None)
-            # Stream the final response
-            async for chunk in stream_ollama(followup_payload):
-                yield chunk
 
     def _extract_tool_calls(self, result: Dict[str, Any]) -> list:
         """Extract tool calls from response"""
-        return result.get("message", {}).get("tool_calls", [])
+        tool_calls = result.get("message", {}).get("tool_calls", [])
+        if tool_calls:
+            logger.debug(f"Extracted tool_calls from response: {tool_calls}")
+        return tool_calls
 
     async def _handle_tool_calls(self, messages: list, tool_calls: list) -> list:
         """Process tool calls and get results"""
@@ -130,7 +152,7 @@ class ProxyService:
             logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
             messages.append({
                 "role": "tool",
-                "name": tool_name,
+                "tool_name": tool_name,
                 "content": tool_result
             })
         return messages
