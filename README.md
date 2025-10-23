@@ -169,7 +169,15 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
 }
 ```
 
-### CORS Configurationn
+> [!WARNING]
+> **Docker Command Limitations**: When running in Docker, MCP servers should use commands available in the container:
+> - ✅ `npx` for Node.js-based MCP servers
+> - ✅ `uvx` for Python-based MCP servers
+> - ✅ Direct executables in the container
+> - ❌ `docker` commands (unless Docker-in-Docker is configured)
+> - ❌ Local file paths from your host machine
+
+### CORS Configuration
 
 Configure Cross-Origin Resource Sharing (CORS) to allow requests from your frontend applications:
 
@@ -185,6 +193,9 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
 ```
 
 **Environment Variables:**
+- `OLLAMA_URL`: URL of the Ollama server (default: `http://localhost:11434`)
+  - Can be overridden with `--ollama-url` CLI parameter
+  - Useful for Docker deployments and configuration management
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
   - `*` allows all origins (shows warning in logs)
   - Specific origins like `http://localhost:3000,https://myapp.com` for production
