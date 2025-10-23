@@ -140,19 +140,19 @@ def test_validate_cli_max_tool_rounds():
         from ollama_mcp_bridge.utils import validate_cli_inputs
 
     # Valid case: None
-    validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", None)
+    validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", None, None)
 
     # Invalid max_tool_rounds (zero)
     from typer import BadParameter
     try:
-        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", 0)
+        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", 0, None)
         assert False, "Expected BadParameter for max_tool_rounds=0"
     except BadParameter:
         pass
 
     # Invalid max_tool_rounds (negative)
     try:
-        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", -1)
+        validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", -1, None)
         assert False, "Expected BadParameter for max_tool_rounds=-1"
     except BadParameter:
         pass
@@ -163,3 +163,34 @@ def test_script_installed():
         assert result.returncode == 0
     except (FileNotFoundError, subprocess.SubprocessError) as e:
         assert False, f"Subprocess call failed. Is the script installed? {e}"
+
+
+def test_system_prompt_prepended():
+    """Test that the system prompt configured on MCPManager is prepended to messages."""
+    try:
+        from ollama_mcp_bridge.mcp_manager import MCPManager
+        from ollama_mcp_bridge.proxy_service import ProxyService
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from ollama_mcp_bridge.mcp_manager import MCPManager
+        from ollama_mcp_bridge.proxy_service import ProxyService
+
+    mgr = MCPManager(system_prompt="You are a helpful assistant.")
+    ps = ProxyService(mgr)
+
+    # Case: user message only -> system prompt should be prepended
+    messages = [{"role": "user", "content": "Hello"}]
+    out = ps._maybe_prepend_system_prompt(messages)
+    assert out[0]["role"] == "system"
+    assert out[0]["content"] == "You are a helpful assistant."
+
+    # Case: existing system prompt should not be duplicated or replaced
+    messages2 = [{"role": "system", "content": "Existing"}, {"role": "user", "content": "Hi"}]
+    out2 = ps._maybe_prepend_system_prompt(messages2)
+    assert out2[0]["role"] == "system"
+    assert out2[0]["content"] == "Existing"
+
+    # Case: empty messages -> system prompt becomes the only message
+    out3 = ps._maybe_prepend_system_prompt([])
+    assert out3[0]["role"] == "system"
+    assert out3[0]["content"] == "You are a helpful assistant."

@@ -59,7 +59,7 @@
 - 💻 **Typer CLI**: Clean command-line interface with configurable options
 - 📊 **Structured Logging**: Uses loguru for comprehensive logging
 - 📦 **PyPI Package**: Easily installable via pip or uv from PyPI
-
+- 🗣️ **System Prompt Configuration**: Allows setting a system prompt for the assistant's behavior
 
 ## Requirements
 
@@ -204,6 +204,10 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
   - Can be overridden with `--ollama-url` CLI parameter
   - Useful for Docker deployments and configuration management
   - Example: `OLLAMA_URL=http://192.168.1.100:11434 ollama-mcp-bridge`
+- `SYSTEM_PROMPT`: Optional system prompt to prepend to all forwarded `/api/chat` requests
+  - Can be set via the `SYSTEM_PROMPT` environment variable or `--system-prompt` CLI flag
+  - If provided, the bridge will prepend a system message (role: `system`) to the beginning of the `messages` array for `/api/chat` requests unless the request already starts with a system message.
+  - Example: `SYSTEM_PROMPT="You are a concise assistant." ollama-mcp-bridge`
 
 **CORS Logging:**
 - The bridge logs CORS configuration at startup
@@ -235,6 +239,9 @@ ollama-mcp-bridge --ollama-url http://192.168.1.100:11434
 # Limit tool execution rounds (prevents excessive tool calls)
 ollama-mcp-bridge --max-tool-rounds 5
 
+# Set a system prompt to prepend to all /api/chat requests
+ollama-mcp-bridge --system-prompt "You are a concise assistant."
+
 # Combine options
 ollama-mcp-bridge --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434 --max-tool-rounds 10
 
@@ -253,10 +260,10 @@ ollama-mcp-bridge --version
 - `--host`: Host to bind the server (default: `0.0.0.0`)
 - `--port`: Port to bind the server (default: `8000`)
 - `--ollama-url`: Ollama server URL (default: `http://localhost:11434`)
-- `--max-tool-rounds`: Maximum tool execution rounds (default: unlimited, can also be set via `MAX_TOOL_ROUNDS` environment variable)
+- `--max-tool-rounds`: Maximum tool execution rounds (default: unlimited)
 - `--reload`: Enable auto-reload during development
 - `--version`: Show version information, check for updates and exit
-
+- `--system-prompt`: Optional system prompt to prepend to `/api/chat` requests (default: none)
 ### API Usage
 
 The API is available at `http://localhost:8000`.

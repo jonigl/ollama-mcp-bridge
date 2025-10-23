@@ -80,8 +80,12 @@ async def iter_ndjson_chunks(chunk_iterator):
         except json.JSONDecodeError as e:
             logger.debug(f"Error parsing trailing NDJSON: {e}")
 
-def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_tool_rounds: int = None):
-    """Validate CLI inputs for config file, host, port, ollama_url, and max_tool_rounds."""
+def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_tool_rounds: int = None, system_prompt: str = None):
+    """Validate CLI inputs for config file, host, port, ollama_url, max_tool_rounds and system_prompt.
+
+    Args:
+        system_prompt: optional system prompt string; if provided, must be a non-empty string and not excessively long.
+    """
     # Validate config file exists
     if not os.path.isfile(config):
         raise BadParameter(f"Config file not found: {config}")
@@ -102,6 +106,17 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_
     # Validate max_tool_rounds
     if max_tool_rounds is not None and max_tool_rounds < 1:
         raise BadParameter(f"max_tool_rounds must be at least 1, got {max_tool_rounds}")
+
+    # Validate system_prompt (if provided)
+    if system_prompt is not None:
+        if not isinstance(system_prompt, str):
+            raise BadParameter("system_prompt must be a string")
+        # Reject empty or whitespace-only prompts
+        if not system_prompt.strip():
+            raise BadParameter("system_prompt must be a non-empty string")
+        # Limit length to a reasonable maximum to avoid excessively large payloads
+        if len(system_prompt) > 10000:
+            raise BadParameter("system_prompt is too long (max 10000 characters)")
 
 async def check_for_updates(current_version: str, print_message: bool = False) -> str:
     """

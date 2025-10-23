@@ -16,6 +16,7 @@ def cli_app(
     port: int = typer.Option(8000, "--port", help="Port to bind to"),
     ollama_url: str = typer.Option(os.getenv("OLLAMA_URL", "http://localhost:11434"), "--ollama-url", help="Ollama server URL"),
     max_tool_rounds: Optional[int] = typer.Option(os.getenv("MAX_TOOL_ROUNDS", None), "--max-tool-rounds", help="Maximum tool execution rounds (default: unlimited)"),
+    system_prompt: Optional[str] = typer.Option(os.getenv("SYSTEM_PROMPT", None), "--system-prompt", help="System prompt to prepend to messages (can also be set with SYSTEM_PROMPT env var)"),
     reload: bool = typer.Option(False, "--reload", help="Enable auto-reload"),
     version: bool = typer.Option(False, "--version", help="Show version information, check for updates and exit"),
 ):
@@ -25,12 +26,13 @@ def cli_app(
         # Check for updates and print if available
         asyncio.run(check_for_updates(__version__, print_message=True))
         raise typer.Exit(0)
-    validate_cli_inputs(config, host, port, ollama_url, max_tool_rounds)
+    validate_cli_inputs(config, host, port, ollama_url, max_tool_rounds, system_prompt)
 
     # Store config in app state so lifespan can access it
     app.state.config_file = config
     app.state.ollama_url = ollama_url
     app.state.max_tool_rounds = max_tool_rounds
+    app.state.system_prompt = system_prompt
 
     logger.info(f"Starting MCP proxy server on {host}:{port}")
     logger.info(f"Using Ollama server: {ollama_url}")
