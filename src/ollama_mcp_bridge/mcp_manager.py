@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 class MCPManager:
     """Manager for MCP servers, handling tool definitions and session management."""
 
-    def __init__(self, ollama_url: str = "http://localhost:11434"):
+    def __init__(self, ollama_url: str = "http://localhost:11434", system_prompt: str = None):
         """Initialize MCP Manager
 
         Args:
@@ -22,6 +22,8 @@ class MCPManager:
         self.all_tools: List[dict] = []
         self.exit_stack = AsyncExitStack()
         self.ollama_url = ollama_url
+        # Optional system prompt that can be prepended to messages
+        self.system_prompt = system_prompt
         self.http_client = httpx.AsyncClient()
 
     async def load_servers(self, config_path: str):

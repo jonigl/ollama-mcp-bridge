@@ -18,6 +18,20 @@ class ProxyService:
         self.mcp_manager = mcp_manager
         self.http_client = httpx.AsyncClient(timeout=None)
 
+    def _maybe_prepend_system_prompt(self, messages: list) -> list:
+        """If a system prompt is configured on the MCP manager, ensure it is the first message.
+
+        Does not duplicate if the first message already has role 'system'.
+        """
+        system_prompt = getattr(self.mcp_manager, 'system_prompt', None)
+        if not system_prompt:
+            return messages
+
+        # If messages is empty or first message isn't a system role, prepend
+        if not messages or messages[0].get('role') != 'system':
+            return [{'role': 'system', 'content': system_prompt}] + messages
+        return messages
+
     async def health_check(self) -> Dict[str, Any]:
         """Check the health of the Ollama server and MCP setup"""
         ollama_healthy = await check_ollama_health_async(self.mcp_manager.ollama_url)
@@ -83,6 +97,7 @@ class ProxyService:
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
         messages = payload.get("messages") or []
+        messages = self._maybe_prepend_system_prompt(messages)
 
         # Get max tool rounds from app state (None means unlimited)
         max_rounds = getattr(self.mcp_manager, 'max_tool_rounds', None)
@@ -124,6 +139,7 @@ class ProxyService:
         payload = dict(payload)
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
         messages = list(payload.get("messages") or [])
+        messages = self._maybe_prepend_system_prompt(messages)
 
         async def stream_ollama(payload_to_send):
             async with httpx.AsyncClient(timeout=None) as client:
