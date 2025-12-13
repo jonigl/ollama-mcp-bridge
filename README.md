@@ -37,6 +37,7 @@
 - [Development](#development)
   - [Key Dependencies](#key-dependencies)
   - [Testing](#testing)
+- [Contributing](#contributing)
 - [Related Projects](#related-projects)
 - [Inspiration and Credits](#inspiration-and-credits)
 
@@ -418,6 +419,14 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 > [!NOTE]
 > Tests require the server to be running on localhost:8000. Make sure to start the server before running pytest.
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup instructions
+- Code formatting guidelines (Black)
+- Testing procedures
+- Commit conventions
 
 ## Related Projects
 
