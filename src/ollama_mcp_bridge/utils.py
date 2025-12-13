@@ -1,4 +1,5 @@
 """Utility functions for ollama-mcp-bridge"""
+
 import os
 import json
 import re
@@ -47,15 +48,11 @@ def get_ollama_proxy_timeout_config() -> Tuple[bool, Optional[float]]:
     try:
         timeout_ms = int(raw)
     except ValueError:
-        logger.warning(
-            f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={raw!r}: expected an integer number of milliseconds."
-        )
+        logger.warning(f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={raw!r}: expected an integer number of milliseconds.")
         return False, None
 
     if timeout_ms < 0:
-        logger.warning(
-            f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={timeout_ms}: must be >= 0 (milliseconds)."
-        )
+        logger.warning(f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={timeout_ms}: must be >= 0 (milliseconds).")
         return False, None
 
     if timeout_ms == 0:
@@ -72,7 +69,7 @@ def configure_cors(app):
     cors_origins = [origin.strip() for origin in cors_origins]
 
     # Don't log CORS config if the user is checking the version
-    is_version_check = any('--version' in arg for arg in sys.argv)
+    is_version_check = any("--version" in arg for arg in sys.argv)
 
     if not is_version_check:
         if cors_origins == ["*"]:
@@ -104,6 +101,7 @@ def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
         logger.error(f"Failed to connect to Ollama: {e}")
         return False
 
+
 async def check_ollama_health_async(ollama_url: str, timeout: int = 3) -> bool:
     """Check if Ollama server is running and accessible (async version for FastAPI)."""
     try:
@@ -118,6 +116,7 @@ async def check_ollama_health_async(ollama_url: str, timeout: int = 3) -> bool:
     except (httpx.ConnectError, httpx.ReadTimeout, httpx.HTTPError) as e:
         logger.error(f"Failed to connect to Ollama: {e}")
         return False
+
 
 async def iter_ndjson_chunks(chunk_iterator):
     """Async generator that yields parsed JSON objects from NDJSON (newline-delimited JSON) byte chunks."""
@@ -138,7 +137,10 @@ async def iter_ndjson_chunks(chunk_iterator):
         except json.JSONDecodeError as e:
             logger.debug(f"Error parsing trailing NDJSON: {e}")
 
-def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_tool_rounds: int = None, system_prompt: str = None):
+
+def validate_cli_inputs(
+    config: str, host: str, port: int, ollama_url: str, max_tool_rounds: int = None, system_prompt: str = None
+):
     """Validate CLI inputs for config file, host, port, ollama_url, max_tool_rounds and system_prompt.
 
     Args:
@@ -176,6 +178,7 @@ def validate_cli_inputs(config: str, host: str, port: int, ollama_url: str, max_
         if len(system_prompt) > 10000:
             raise BadParameter("system_prompt is too long (max 10000 characters)")
 
+
 async def check_for_updates(current_version: str, print_message: bool = False) -> str:
     """
     Check if a newer version of ollama-mcp-bridge is available on PyPI.
@@ -189,10 +192,7 @@ async def check_for_updates(current_version: str, print_message: bool = False) -
     """
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://pypi.org/pypi/ollama-mcp-bridge/json",
-                timeout=5
-            )
+            response = await client.get("https://pypi.org/pypi/ollama-mcp-bridge/json", timeout=5)
 
             if response.status_code == 200:
                 data = response.json()
@@ -239,7 +239,7 @@ def expand_env_vars(value: str, cwd: str = None) -> str:
     value = value.replace("${workspaceFolder}", cwd)
 
     # Replace ${env:VAR_NAME} with environment variable value
-    pattern = r'\$\{env:([^}]+)\}'
+    pattern = r"\$\{env:([^}]+)\}"
     matches = re.findall(pattern, value)
     for var_name in matches:
         env_value = os.getenv(var_name, "")

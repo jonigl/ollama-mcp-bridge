@@ -3,6 +3,7 @@ import random
 
 mcp = FastMCP("weather")
 
+
 @mcp.tool()
 async def get_current_temperature(city: str) -> str:
     """Get current temperature for a location.
@@ -15,4 +16,4 @@ async def get_current_temperature(city: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport='stdio')
+    mcp.run(transport="stdio")

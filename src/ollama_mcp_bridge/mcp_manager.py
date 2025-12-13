@@ -1,4 +1,5 @@
 """MCP Server Management"""
+
 import json
 from typing import List, Dict
 from contextlib import AsyncExitStack
@@ -34,7 +35,7 @@ class MCPManager:
         """Load and connect to all MCP servers from config"""
         config_dir = os.path.dirname(os.path.abspath(config_path))
         try:
-            with open(config_path, encoding='utf-8') as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse config file '{config_path}': {e}")
@@ -43,13 +44,13 @@ class MCPManager:
             logger.error(f"Config file not found: {config_path}")
             raise
 
-        if 'mcpServers' not in config:
+        if "mcpServers" not in config:
             logger.error(f"Config file '{config_path}' missing 'mcpServers' key")
             raise ValueError(f"Config file '{config_path}' missing 'mcpServers' key")
 
-        for name, server_config in config['mcpServers'].items():
+        for name, server_config in config["mcpServers"].items():
             resolved_config = dict(server_config)
-            resolved_config['cwd'] = config_dir
+            resolved_config["cwd"] = config_dir
             await self._connect_server(name, resolved_config)
 
     async def _connect_server(self, name: str, config: dict):
@@ -66,15 +67,12 @@ class MCPManager:
 
         try:
             # Expand env vars
-            cwd = config.get('cwd', os.getcwd())
+            cwd = config.get("cwd", os.getcwd())
             config = expand_dict_env_vars(config, cwd)
 
             if "command" in config:
                 params = StdioServerParameters(
-                    command=config['command'],
-                    args=config.get('args', []),
-                    env=config.get('env'),
-                    cwd=config.get('cwd')
+                    command=config["command"], args=config.get("args", []), env=config.get("env"), cwd=config.get("cwd")
                 )
                 transport = await server_stack.enter_async_context(stdio_client(params))
                 read, write = transport
@@ -104,10 +102,10 @@ class MCPManager:
                     "function": {
                         "name": f"{name}.{tool.name}",
                         "description": tool.description,
-                        "parameters": tool.inputSchema
+                        "parameters": tool.inputSchema,
                     },
                     "server": name,
-                    "original_name": tool.name
+                    "original_name": tool.name,
                 }
                 self.all_tools.append(tool_def)
 

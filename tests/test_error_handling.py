@@ -1,4 +1,3 @@
-
 import pytest
 import json
 import tempfile
@@ -9,7 +8,7 @@ from ollama_mcp_bridge.mcp_manager import MCPManager
 @pytest.mark.anyio
 async def test_invalid_json_config():
     manager = MCPManager()
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         f.write("{invalid_json")
         config_path = f.name
 
@@ -19,10 +18,11 @@ async def test_invalid_json_config():
     finally:
         os.unlink(config_path)
 
+
 @pytest.mark.anyio
 async def test_missing_mcp_servers_key():
     manager = MCPManager()
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({"other_key": {}}, f)
         config_path = f.name
 
@@ -32,21 +32,15 @@ async def test_missing_mcp_servers_key():
     finally:
         os.unlink(config_path)
 
+
 @pytest.mark.anyio
 async def test_connection_failure_handling():
     manager = MCPManager()
     # Config with one valid (mocked later if needed, but here we expect failure) and one invalid server
     # Since we don't want to actually run a server, we'll use a command that fails
-    config_data = {
-        "mcpServers": {
-            "bad_server": {
-                "command": "non_existent_command_xyz",
-                "args": []
-            }
-        }
-    }
+    config_data = {"mcpServers": {"bad_server": {"command": "non_existent_command_xyz", "args": []}}}
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config_data, f)
         config_path = f.name
 

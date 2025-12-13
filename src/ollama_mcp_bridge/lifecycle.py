@@ -1,4 +1,5 @@
 """Application lifecycle management for FastAPI"""
+
 from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
@@ -21,13 +22,15 @@ async def lifespan(fastapi_app: FastAPI):
 
     try:
         # Get config from app state with explicit defaults
-        config_file = getattr(fastapi_app.state, 'config_file', 'mcp-config.json')
-        ollama_url = getattr(fastapi_app.state, 'ollama_url', 'http://localhost:11434')
-        max_tool_rounds = getattr(fastapi_app.state, 'max_tool_rounds', None)
-        logger.info(f"Starting with config file: {config_file}, Ollama URL: {ollama_url}, Max tool rounds: {max_tool_rounds if max_tool_rounds else 'unlimited'}")
+        config_file = getattr(fastapi_app.state, "config_file", "mcp-config.json")
+        ollama_url = getattr(fastapi_app.state, "ollama_url", "http://localhost:11434")
+        max_tool_rounds = getattr(fastapi_app.state, "max_tool_rounds", None)
+        logger.info(
+            f"Starting with config file: {config_file}, Ollama URL: {ollama_url}, Max tool rounds: {max_tool_rounds if max_tool_rounds else 'unlimited'}"
+        )
 
         # Get optional system prompt
-        system_prompt = getattr(fastapi_app.state, 'system_prompt', None)
+        system_prompt = getattr(fastapi_app.state, "system_prompt", None)
 
         # Initialize manager and load servers
         mcp_manager = MCPManager(ollama_url=ollama_url, system_prompt=system_prompt)

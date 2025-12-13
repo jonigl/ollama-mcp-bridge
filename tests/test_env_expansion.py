@@ -1,4 +1,3 @@
-
 import os
 import sys
 from pathlib import Path
@@ -8,6 +7,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 from ollama_mcp_bridge.utils import expand_env_vars, expand_dict_env_vars
+
 
 def test_expand_env_vars():
     os.environ["TEST_VAR"] = "test_value"
@@ -22,6 +22,7 @@ def test_expand_env_vars():
     custom_cwd = "/tmp/custom"
     assert expand_env_vars("${workspaceFolder}", cwd=custom_cwd) == custom_cwd
 
+
 def test_expand_dict_env_vars():
     os.environ["TEST_VAR"] = "test_value"
     cwd = os.getcwd()
@@ -30,9 +31,7 @@ def test_expand_dict_env_vars():
         "key1": "value1",
         "key2": "${env:TEST_VAR}",
         "key3": ["item1", "${workspaceFolder}"],
-        "key4": {
-            "nested": "${env:TEST_VAR}"
-        }
+        "key4": {"nested": "${env:TEST_VAR}"},
     }
 
     expanded = expand_dict_env_vars(data)
