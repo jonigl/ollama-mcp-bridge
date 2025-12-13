@@ -4,7 +4,7 @@ This document describes the GitHub workflows set up for the ollama-mcp-bridge pr
 
 ## Available Workflows
 
-### 1. Tests ([test.yml](.github/workflows/test.yml))
+### 1. Tests ([ci.yml](.github/workflows/ci.yml))
 
 **Trigger:**
 - Push to `main` branch
@@ -12,7 +12,8 @@ This document describes the GitHub workflows set up for the ollama-mcp-bridge pr
 - Ignores changes to docs, images, and some config files
 
 **Purpose:**
-Runs unit tests using `pytest` in a fresh environment managed by `uv`.
+Runs unit tests using `pytest` in a fresh environment managed by `uv`. And checks code formatting with `black`.
+
 
 **Key Steps:**
 - Checkout code

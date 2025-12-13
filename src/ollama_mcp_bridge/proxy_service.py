@@ -1,4 +1,5 @@
 """Service for handling proxy requests to Ollama"""
+
 import json
 from typing import Dict, Any, AsyncGenerator, Union
 import httpx
@@ -25,13 +26,13 @@ class ProxyService:
 
         Does not duplicate if the first message already has role 'system'.
         """
-        system_prompt = getattr(self.mcp_manager, 'system_prompt', None)
+        system_prompt = getattr(self.mcp_manager, "system_prompt", None)
         if not system_prompt:
             return messages
 
         # If messages is empty or first message isn't a system role, prepend
-        if not messages or messages[0].get('role') != 'system':
-            return [{'role': 'system', 'content': system_prompt}] + messages
+        if not messages or messages[0].get("role") != "system":
+            return [{"role": "system", "content": system_prompt}] + messages
         return messages
 
     async def health_check(self) -> Dict[str, Any]:
@@ -40,10 +41,12 @@ class ProxyService:
         return {
             "status": "healthy" if ollama_healthy else "degraded",
             "ollama_status": "running" if ollama_healthy else "not accessible",
-            "tools": len(self.mcp_manager.all_tools)
+            "tools": len(self.mcp_manager.all_tools),
         }
 
-    async def proxy_chat_with_tools(self, payload: Dict[str, Any], stream: bool = False) -> Union[Dict[str, Any], StreamingResponse]:
+    async def proxy_chat_with_tools(
+        self, payload: Dict[str, Any], stream: bool = False
+    ) -> Union[Dict[str, Any], StreamingResponse]:
         """Handle chat requests with potential tool integration
 
         Args:
@@ -60,7 +63,7 @@ class ProxyService:
             if stream:
                 return StreamingResponse(
                     self._proxy_with_tools_streaming(endpoint="/api/chat", payload=payload),
-                    media_type="application/json"
+                    media_type="application/json",
                 )
             else:
                 return await self._proxy_with_tools_non_streaming(endpoint="/api/chat", payload=payload)
@@ -83,7 +86,9 @@ class ProxyService:
         resp.raise_for_status()
         return resp.json()
 
-    async def _stream_final_llm_call(self, stream_ollama, payload: Dict[str, Any], messages: list) -> AsyncGenerator[bytes, None]:
+    async def _stream_final_llm_call(
+        self, stream_ollama, payload: Dict[str, Any], messages: list
+    ) -> AsyncGenerator[bytes, None]:
         """Stream a final LLM call without tools to get final answer after tool execution"""
         final_payload = dict(payload)
         final_payload["messages"] = messages
@@ -102,7 +107,7 @@ class ProxyService:
         messages = self._maybe_prepend_system_prompt(messages)
 
         # Get max tool rounds from app state (None means unlimited)
-        max_rounds = getattr(self.mcp_manager, 'max_tool_rounds', None)
+        max_rounds = getattr(self.mcp_manager, "max_tool_rounds", None)
         current_round = 0
 
         # Loop to handle potentially multiple rounds of tool calls
@@ -130,7 +135,9 @@ class ProxyService:
             # Check if we've reached the maximum number of rounds
             current_round += 1
             if max_rounds is not None and current_round >= max_rounds:
-                logger.warning(f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results")
+                logger.warning(
+                    f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results"
+                )
                 return await self._make_final_llm_call(endpoint, payload, messages)
 
             # Continue loop to get next response
@@ -145,12 +152,14 @@ class ProxyService:
 
         async def stream_ollama(payload_to_send):
             async with httpx.AsyncClient(timeout=None) as client:
-                async with client.stream("POST", f"{self.mcp_manager.ollama_url}{endpoint}", json=payload_to_send) as resp:
+                async with client.stream(
+                    "POST", f"{self.mcp_manager.ollama_url}{endpoint}", json=payload_to_send
+                ) as resp:
                     async for chunk in resp.aiter_bytes():
                         yield chunk
 
         # Get max tool rounds from app state (None means unlimited)
-        max_rounds = getattr(self.mcp_manager, 'max_tool_rounds', None)
+        max_rounds = getattr(self.mcp_manager, "max_tool_rounds", None)
         current_round = 0
 
         # Loop to handle potentially multiple rounds of tool calls
@@ -182,17 +191,15 @@ class ProxyService:
                 break
 
             # Tool calls detected; execute them
-            messages.append({
-                "role": "assistant",
-                "content": response_text,
-                "tool_calls": tool_calls
-            })
+            messages.append({"role": "assistant", "content": response_text, "tool_calls": tool_calls})
             messages = await self._handle_tool_calls(messages, tool_calls)
 
             # Check if we've reached the maximum number of rounds
             current_round += 1
             if max_rounds is not None and current_round >= max_rounds:
-                logger.warning(f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results")
+                logger.warning(
+                    f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results"
+                )
                 # Stream the final LLM response with tool results (no more tools allowed)
                 async for chunk in self._stream_final_llm_call(stream_ollama, payload, messages):
                     yield chunk
@@ -212,11 +219,7 @@ class ProxyService:
             arguments = tool_call["function"]["arguments"]
             tool_result = await self.mcp_manager.call_tool(tool_name, arguments)
             logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
-            messages.append({
-                "role": "tool",
-                "tool_name": tool_name,
-                "content": tool_result
-            })
+            messages.append({"role": "tool", "tool_name": tool_name, "content": tool_result})
         return messages
 
     async def proxy_generic_request(self, path: str, request: Request) -> Response:
@@ -248,18 +251,12 @@ class ProxyService:
             async with httpx.AsyncClient(**client_kwargs) as client:
                 # Forward the request with the same method
                 response = await client.request(
-                    request.method,
-                    url,
-                    headers=headers,
-                    params=request.query_params,
-                    content=body if body else None
+                    request.method, url, headers=headers, params=request.query_params, content=body if body else None
                 )
 
                 # Return the response as-is
                 return Response(
-                    content=response.content,
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
+                    content=response.content, status_code=response.status_code, headers=dict(response.headers)
                 )
         except httpx.HTTPStatusError as e:
             logger.error(f"Proxy failed for {path}: {e.response.text}")

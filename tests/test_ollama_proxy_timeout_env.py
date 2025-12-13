@@ -168,27 +168,18 @@ async def test_check_ollama_health_async_respects_env_override(monkeypatch):
 
     # Env unset -> uses function arg
     monkeypatch.delenv("OLLAMA_PROXY_TIMEOUT", raising=False)
-    assert (
-        await utils.check_ollama_health_async("http://localhost:11434", timeout=9)
-        is True
-    )
+    assert await utils.check_ollama_health_async("http://localhost:11434", timeout=9) is True
     assert dummy_client.seen_timeout == 9
 
     # Env set -> overrides
     monkeypatch.setenv("OLLAMA_PROXY_TIMEOUT", "2000")
-    assert (
-        await utils.check_ollama_health_async("http://localhost:11434", timeout=9)
-        is True
-    )
+    assert await utils.check_ollama_health_async("http://localhost:11434", timeout=9) is True
     assert dummy_client.seen_timeout == 2.0
 
     # Env 0 -> disables
     monkeypatch.setenv("OLLAMA_PROXY_TIMEOUT", "0")
     monkeypatch.setattr(utils, "_ollama_proxy_timeout_disabled_warned", False)
-    assert (
-        await utils.check_ollama_health_async("http://localhost:11434", timeout=9)
-        is True
-    )
+    assert await utils.check_ollama_health_async("http://localhost:11434", timeout=9) is True
     assert dummy_client.seen_timeout is None
 
 

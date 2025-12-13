@@ -2,6 +2,7 @@
 Unit tests that can run in GitHub Actions (no external services required)
 Run with: uv run pytest tests/test_unit.py -v
 """
+
 import json
 import os
 import subprocess
@@ -21,17 +22,17 @@ def test_config_loading():
             "test_server": {
                 "command": "test_command",
                 "args": ["arg1", "arg2"],
-                "env": {"TEST_VAR": "value"}
+                "env": {"TEST_VAR": "value"},
             }
         }
     }
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config_data, f)
         config_path = f.name
 
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             loaded_config = json.load(f)
 
         assert "mcpServers" in loaded_config
@@ -40,6 +41,7 @@ def test_config_loading():
         assert loaded_config["mcpServers"]["test_server"]["args"] == ["arg1", "arg2"]
     finally:
         os.unlink(config_path)
+
 
 def test_mcp_manager_initialization():
     """Test MCPManager can be initialized"""
@@ -60,6 +62,7 @@ def test_mcp_manager_initialization():
     assert hasattr(manager, "http_client")
     assert hasattr(manager, "ollama_url")
 
+
 def test_tool_definition_structure():
     """Test that tool definitions have the expected structure"""
     # Simulate a tool definition that would be created
@@ -68,12 +71,8 @@ def test_tool_definition_structure():
         "function": {
             "name": "test_tool",
             "description": "A test tool",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     }
 
     assert tool_def["type"] == "function"
@@ -81,6 +80,7 @@ def test_tool_definition_structure():
     assert "name" in tool_def["function"]
     assert "description" in tool_def["function"]
     assert "parameters" in tool_def["function"]
+
 
 def test_project_structure():
     """Test that required project files exist"""
@@ -99,6 +99,7 @@ def test_project_structure():
         file_path = src_root / file_name
         assert file_path.exists(), f"Required file {file_name} not found"
 
+
 def test_imports():
     """Test that all modules can be imported without errors"""
     try:
@@ -107,6 +108,7 @@ def test_imports():
 
         # Import modules, using them to avoid unused import warnings
         from ollama_mcp_bridge import api, mcp_manager, utils, proxy_service
+
         assert api
         assert mcp_manager
         assert utils
@@ -114,12 +116,13 @@ def test_imports():
     except ImportError as e:
         assert False, f"Import failed: {e}"
 
+
 def test_example_config_structure():
     """Test that the example config file has the correct structure"""
     config_path = Path(__file__).parent.parent / "mcp-config.json"
 
     if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
 
         assert "mcpServers" in config
@@ -138,6 +141,7 @@ def test_example_config_structure():
                 assert "args" in server_config
                 assert isinstance(server_config["args"], list)
 
+
 def test_validate_cli_max_tool_rounds():
     """Test that validate_cli_inputs enforces max_tool_rounds validation."""
     try:
@@ -151,6 +155,7 @@ def test_validate_cli_max_tool_rounds():
 
     # Invalid max_tool_rounds (zero)
     from typer import BadParameter
+
     try:
         validate_cli_inputs("mcp-config.json", "0.0.0.0", 8000, "http://localhost:11434", 0, None)
         assert False, "Expected BadParameter for max_tool_rounds=0"
@@ -163,6 +168,7 @@ def test_validate_cli_max_tool_rounds():
         assert False, "Expected BadParameter for max_tool_rounds=-1"
     except BadParameter:
         pass
+
 
 def test_script_installed():
     try:
@@ -192,7 +198,10 @@ def test_system_prompt_prepended():
     assert out[0]["content"] == "You are a helpful assistant."
 
     # Case: existing system prompt should not be duplicated or replaced
-    messages2 = [{"role": "system", "content": "Existing"}, {"role": "user", "content": "Hi"}]
+    messages2 = [
+        {"role": "system", "content": "Existing"},
+        {"role": "user", "content": "Hi"},
+    ]
     out2 = ps._maybe_prepend_system_prompt(messages2)
     assert out2[0]["role"] == "system"
     assert out2[0]["content"] == "Existing"

@@ -9,7 +9,7 @@
 # Ollama MCP Bridge
 
 [![PyPI - Python Version](https://img.shields.io/pypi/v/ollama-mcp-bridge?label=ollama-mcp-bridge-pypi)](https://pypi.org/project/ollama-mcp-bridge/)
-[![Tests](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml)
+[![CI](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml)
 [![Test Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml)
 [![Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -37,6 +37,7 @@
 - [Development](#development)
   - [Key Dependencies](#key-dependencies)
   - [Testing](#testing)
+- [Contributing](#contributing)
 - [Related Projects](#related-projects)
 - [Inspiration and Credits](#inspiration-and-credits)
 
@@ -418,6 +419,14 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 > [!NOTE]
 > Tests require the server to be running on localhost:8000. Make sure to start the server before running pytest.
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup instructions
+- Code formatting guidelines (Black)
+- Testing procedures
+- Commit conventions
 
 ## Related Projects
 
