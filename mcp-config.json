@@ -11,9 +11,6 @@
       "env": {
         "MCP_LOG_LEVEL": "ERROR"
       }
-    },
-    "jarvis": {
-      "url": "https://jarvis-mcp-server-main.staging.ipsy.bfainfra.com/mcp"
-    }
+    }    
   }
 }
