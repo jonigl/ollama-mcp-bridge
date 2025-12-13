@@ -11,6 +11,6 @@
       "env": {
         "MCP_LOG_LEVEL": "ERROR"
       }
-    }    
+    }
   }
 }
