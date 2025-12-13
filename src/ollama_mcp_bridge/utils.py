@@ -9,7 +9,60 @@ from loguru import logger
 from packaging import version as pkg_version
 from fastapi.middleware.cors import CORSMiddleware
 import sys
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Tuple
+
+
+_OLLAMA_PROXY_TIMEOUT_ENV = "OLLAMA_PROXY_TIMEOUT"  # milliseconds
+_ollama_proxy_timeout_disabled_warned = False
+
+
+def _warn_ollama_proxy_timeout_disabled_once() -> None:
+    global _ollama_proxy_timeout_disabled_warned
+    if _ollama_proxy_timeout_disabled_warned:
+        return
+    _ollama_proxy_timeout_disabled_warned = True
+    logger.warning(
+        f"{_OLLAMA_PROXY_TIMEOUT_ENV}=0 disables HTTP timeouts for Ollama requests. "
+        "This may cause requests to hang indefinitely if Ollama stops responding."
+    )
+
+
+def get_ollama_proxy_timeout_config() -> Tuple[bool, Optional[float]]:
+    """Return (is_set, timeout_seconds) based on OLLAMA_PROXY_TIMEOUT.
+
+    - Unset/empty: (False, None) meaning "do not override"
+    - 0: (True, None) meaning "explicitly disable timeout" (warns once)
+    - >0: (True, seconds)
+
+    Invalid/negative values are ignored with a warning.
+    """
+    raw = os.getenv(_OLLAMA_PROXY_TIMEOUT_ENV)
+    if raw is None:
+        return False, None
+
+    raw = raw.strip()
+    if not raw:
+        return False, None
+
+    try:
+        timeout_ms = int(raw)
+    except ValueError:
+        logger.warning(
+            f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={raw!r}: expected an integer number of milliseconds."
+        )
+        return False, None
+
+    if timeout_ms < 0:
+        logger.warning(
+            f"Ignoring {_OLLAMA_PROXY_TIMEOUT_ENV}={timeout_ms}: must be >= 0 (milliseconds)."
+        )
+        return False, None
+
+    if timeout_ms == 0:
+        _warn_ollama_proxy_timeout_disabled_once()
+        return True, None
+
+    return True, timeout_ms / 1000.0
 
 
 def configure_cors(app):
@@ -39,7 +92,9 @@ def configure_cors(app):
 def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
     """Check if Ollama server is running and accessible (sync version for CLI)."""
     try:
-        resp = httpx.get(f"{ollama_url}/api/tags", timeout=timeout)
+        is_set, timeout_override = get_ollama_proxy_timeout_config()
+        effective_timeout = timeout_override if is_set else timeout
+        resp = httpx.get(f"{ollama_url}/api/tags", timeout=effective_timeout)
         if resp.status_code == 200:
             logger.success("✓ Ollama server is accessible")
             return True
@@ -52,8 +107,10 @@ def check_ollama_health(ollama_url: str, timeout: int = 3) -> bool:
 async def check_ollama_health_async(ollama_url: str, timeout: int = 3) -> bool:
     """Check if Ollama server is running and accessible (async version for FastAPI)."""
     try:
+        is_set, timeout_override = get_ollama_proxy_timeout_config()
+        effective_timeout = timeout_override if is_set else timeout
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{ollama_url}/api/tags", timeout=timeout)
+            resp = await client.get(f"{ollama_url}/api/tags", timeout=effective_timeout)
             if resp.status_code == 200:
                 return True
             logger.error(f"Ollama server not accessible at {ollama_url}")

@@ -5,9 +5,6 @@ import tempfile
 import os
 from ollama_mcp_bridge.mcp_manager import MCPManager
 
-@pytest.fixture
-def anyio_backend():
-    return 'asyncio'
 
 @pytest.mark.anyio
 async def test_invalid_json_config():
