@@ -29,6 +29,7 @@
 - [Configuration](#configuration)
   - [MCP Servers Configuration](#mcp-servers-configuration)
   - [CORS Configuration](#cors-configuration)
+  - [Environment Variables](#environment-variables)
 - [Usage](#usage)
   - [Start the Server](#start-the-server)
   - [CLI Options](#cli-options)
@@ -236,7 +237,16 @@ CORS_ORIGINS="http://localhost:3000,https://myapp.com" ollama-mcp-bridge
 CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.com" ollama-mcp-bridge
 ```
 
-**Environment Variables:**
+**CORS Logging:**
+- The bridge logs CORS configuration at startup
+- Shows warning when using `*` (all origins)
+- Shows allowed origins when properly configured
+
+> [!WARNING]
+> Using `CORS_ORIGINS="*"` allows all origins and is not recommended for production. Always specify exact origins for security.
+
+
+### Environment Variables:
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
   - `*` allows all origins (shows warning in logs)
   - Example: `CORS_ORIGINS="http://localhost:3000,https://myapp.com" ollama-mcp-bridge`
@@ -258,18 +268,11 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
   - If provided, the bridge will prepend a system message (role: `system`) to the beginning of the `messages` array for `/api/chat` requests unless the request already starts with a system message.
   - Example: `SYSTEM_PROMPT="You are a concise assistant." ollama-mcp-bridge`
 
-**CORS Logging:**
-- The bridge logs CORS configuration at startup
-- Shows warning when using `*` (all origins)
-- Shows allowed origins when properly configured
 
-> [!WARNING]
-> Using `CORS_ORIGINS="*"` allows all origins and is not recommended for production. Always specify exact origins for security.
+## Usage
 
 > [!NOTE]
 > An example MCP server script is provided at [mock-weather-mcp-server/main.py](mock-weather-mcp-server/main.py).
-
-## Usage
 
 ### Start the Server
 ```bash
