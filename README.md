@@ -95,6 +95,7 @@ This uses the included [docker-compose.yml](./docker-compose.yml) file which:
 - Connects to Ollama running on the host machine (`host.docker.internal:11434`)
 - Maps the configuration file from [./mcp-config.json](./mcp-config.json) (includes mock [weather server for demo](./mock-weather-mcp-server))
 - Allows all CORS origins (configurable via `CORS_ORIGINS` environment variable)
+- Supports configurable Ollama request timeouts via `OLLAMA_PROXY_TIMEOUT`
 
 
 ### Or, install from source
@@ -245,6 +246,12 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
   - Can be overridden with `--ollama-url` CLI parameter
   - Useful for Docker deployments and configuration management
   - Example: `OLLAMA_URL=http://192.168.1.100:11434 ollama-mcp-bridge`
+- `OLLAMA_PROXY_TIMEOUT`: Timeout for HTTP requests sent to Ollama, in **milliseconds** (default: unset)
+  - When **unset**, the bridge keeps its existing behavior (some requests use library defaults; `/api/chat` is not timed out)
+  - When set to a value **> 0**, the timeout is applied to Ollama-bound HTTP requests
+  - When set to **0**, timeouts are disabled for Ollama HTTP requests (the bridge logs a warning)
+  - Streaming chat responses always use no timeout, even when this variable is set
+  - Example (10 minutes): `OLLAMA_PROXY_TIMEOUT=600000 ollama-mcp-bridge`
 - `SYSTEM_PROMPT`: Optional system prompt to prepend to all forwarded `/api/chat` requests
   - Can be set via the `SYSTEM_PROMPT` environment variable or `--system-prompt` CLI flag
   - If provided, the bridge will prepend a system message (role: `system`) to the beginning of the `messages` array for `/api/chat` requests unless the request already starts with a system message.

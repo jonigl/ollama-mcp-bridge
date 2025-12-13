@@ -9,7 +9,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
-from .utils import expand_dict_env_vars
+from .utils import expand_dict_env_vars, get_ollama_proxy_timeout_config
 
 
 class MCPManager:
@@ -27,7 +27,8 @@ class MCPManager:
         self.ollama_url = ollama_url
         # Optional system prompt that can be prepended to messages
         self.system_prompt = system_prompt
-        self.http_client = httpx.AsyncClient()
+        is_set, timeout_seconds = get_ollama_proxy_timeout_config()
+        self.http_client = httpx.AsyncClient(timeout=timeout_seconds) if is_set else httpx.AsyncClient()
 
     async def load_servers(self, config_path: str):
         """Load and connect to all MCP servers from config"""

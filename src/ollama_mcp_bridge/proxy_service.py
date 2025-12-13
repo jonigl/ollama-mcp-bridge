@@ -6,7 +6,7 @@ from fastapi import Request, Response, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
-from .utils import check_ollama_health_async, iter_ndjson_chunks
+from .utils import check_ollama_health_async, iter_ndjson_chunks, get_ollama_proxy_timeout_config
 from .mcp_manager import MCPManager
 
 
@@ -16,7 +16,9 @@ class ProxyService:
     def __init__(self, mcp_manager: MCPManager):
         """Initialize the proxy service with an MCP manager."""
         self.mcp_manager = mcp_manager
-        self.http_client = httpx.AsyncClient(timeout=None)
+        is_set, timeout_seconds = get_ollama_proxy_timeout_config()
+        # Preserve existing behavior when unset (no timeout for /api/chat). If set, honor it.
+        self.http_client = httpx.AsyncClient(timeout=timeout_seconds) if is_set else httpx.AsyncClient(timeout=None)
 
     def _maybe_prepend_system_prompt(self, messages: list) -> list:
         """If a system prompt is configured on the MCP manager, ensure it is the first message.
@@ -241,7 +243,9 @@ class ProxyService:
             body = await request.body()
 
             # Create HTTP client
-            async with httpx.AsyncClient() as client:
+            is_set, timeout_seconds = get_ollama_proxy_timeout_config()
+            client_kwargs = {"timeout": timeout_seconds} if is_set else {}
+            async with httpx.AsyncClient(**client_kwargs) as client:
                 # Forward the request with the same method
                 response = await client.request(
                     request.method,
