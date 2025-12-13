@@ -44,6 +44,8 @@
 
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
+- 🌐 **Remote MCP Support**: Connect to MCP servers over HTTP (StreamableHTTP) or SSE (when the URL ends with `/sse`)
+- 🧩 **Config Variable Expansion**: Supports `${env:VAR_NAME}` and `${workspaceFolder}` in config strings
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 🔄 **Multi-Round Tool Execution**: Automatically loops through multiple rounds of tool calls until completion
 - 🛡️ **Configurable Tool Limits**: Set maximum tool execution rounds to prevent excessive tool calls
@@ -158,6 +160,12 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
         "MCP_LOG_LEVEL": "ERROR"
       }
     },
+    "remote_streamable_http": {
+      "url": "https://example.com/mcp"
+    },
+    "remote_sse": {
+      "url": "https://example.com/sse"
+    },
     "filesystem": {
       "command": "npx",
       "args": [
@@ -165,6 +173,39 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
         "@modelcontextprotocol/server-filesystem",
         "/tmp"
       ]
+    }
+  }
+}
+```
+
+You can configure MCP servers in two ways:
+- **Local process**: `{"command": "...", "args": [...], "env": {...}}`
+- **Remote endpoint**: `{"url": "https://..."}`
+  - If the URL ends with `/sse`, the bridge connects via SSE. Otherwise it uses StreamableHTTP.
+
+The config also supports simple expansion in any string value:
+- `${workspaceFolder}` resolves to the directory containing the config file
+- `${env:VAR_NAME}` resolves to the corresponding environment variable
+
+Example:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${workspaceFolder}/data"
+      ]
+    },
+    "remote_with_headers": {
+      "url": "https://example.com/mcp",
+      "headers": {
+        "X-Client-Name": "ollama-mcp-bridge",
+        "X-Request-Tag": "${env:MCP_REQUEST_TAG}"
+      }
     }
   }
 }
