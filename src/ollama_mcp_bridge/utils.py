@@ -9,6 +9,7 @@ from loguru import logger
 from packaging import version as pkg_version
 from fastapi.middleware.cors import CORSMiddleware
 import sys
+from typing import Dict, Any
 
 
 def configure_cors(app):
@@ -164,3 +165,42 @@ async def check_for_updates(current_version: str, print_message: bool = False) -
     except (httpx.HTTPError, json.JSONDecodeError, pkg_version.InvalidVersion) as e:
         logger.debug(f"Failed to check for updates: {e}")
         return current_version  # Return current version when check fails
+
+
+def expand_env_vars(value: str, cwd: str = None) -> str:
+    """
+    Expand environment variable references in a string.
+    Supports ${env:VAR_NAME} and ${workspaceFolder} syntax.
+    """
+    if not isinstance(value, str):
+        return value
+
+    if cwd is None:
+        cwd = os.getcwd()
+
+    # Replace ${workspaceFolder} with current working directory
+    value = value.replace("${workspaceFolder}", cwd)
+
+    # Replace ${env:VAR_NAME} with environment variable value
+    pattern = r'\$\{env:([^}]+)\}'
+    matches = re.findall(pattern, value)
+    for var_name in matches:
+        env_value = os.getenv(var_name, "")
+        value = value.replace(f"${{env:{var_name}}}", env_value)
+
+    return value
+
+
+def expand_dict_env_vars(data: Dict[str, Any], cwd: str = None) -> Dict[str, Any]:
+    """Recursively expand environment variables in a dictionary."""
+    result = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            result[key] = expand_env_vars(value, cwd)
+        elif isinstance(value, dict):
+            result[key] = expand_dict_env_vars(value, cwd)
+        elif isinstance(value, list):
+            result[key] = [expand_env_vars(v, cwd) if isinstance(v, str) else v for v in value]
+        else:
+            result[key] = value
+    return result

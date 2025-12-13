@@ -127,9 +127,16 @@ def test_example_config_structure():
 
         # Check each server has required fields
         for _, server_config in config["mcpServers"].items():
-            assert "command" in server_config
-            assert "args" in server_config
-            assert isinstance(server_config["args"], list)
+            # Servers can be configured either as:
+            # - local process: {"command": "...", "args": [...], "env": {...}}
+            # - remote endpoint: {"url": "https://..."}
+            if "url" in server_config:
+                assert isinstance(server_config["url"], str)
+                assert server_config["url"], "Server url must be non-empty"
+            else:
+                assert "command" in server_config
+                assert "args" in server_config
+                assert isinstance(server_config["args"], list)
 
 def test_validate_cli_max_tool_rounds():
     """Test that validate_cli_inputs enforces max_tool_rounds validation."""

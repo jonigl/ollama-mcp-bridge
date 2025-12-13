@@ -7,6 +7,9 @@ import httpx
 from loguru import logger
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
+from .utils import expand_dict_env_vars
 
 
 class MCPManager:
@@ -29,8 +32,20 @@ class MCPManager:
     async def load_servers(self, config_path: str):
         """Load and connect to all MCP servers from config"""
         config_dir = os.path.dirname(os.path.abspath(config_path))
-        with open(config_path, encoding='utf-8') as f:
-            config = json.load(f)
+        try:
+            with open(config_path, encoding='utf-8') as f:
+                config = json.load(f)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse config file '{config_path}': {e}")
+            raise ValueError(f"Invalid JSON in config file '{config_path}': {e}") from e
+        except FileNotFoundError:
+            logger.error(f"Config file not found: {config_path}")
+            raise
+
+        if 'mcpServers' not in config:
+            logger.error(f"Config file '{config_path}' missing 'mcpServers' key")
+            raise ValueError(f"Config file '{config_path}' missing 'mcpServers' key")
+
         for name, server_config in config['mcpServers'].items():
             resolved_config = dict(server_config)
             resolved_config['cwd'] = config_dir
@@ -38,32 +53,75 @@ class MCPManager:
 
     async def _connect_server(self, name: str, config: dict):
         """Connect to a single MCP server"""
-        params = StdioServerParameters(
+        server_stack = AsyncExitStack()
 
-            command=config['command'],
-            args=config['args'],
-            env=config.get('env'),
-            cwd=config.get('cwd')
-        )
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
-        stdio, write = stdio_transport
-        session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
-        await session.initialize()
-        self.sessions[name] = session
-        meta = await session.list_tools()
-        for tool in meta.tools:
-            tool_def = {
-                "type": "function",
-                "function": {
-                    "name": f"{name}.{tool.name}",
-                    "description": tool.description,
-                    "parameters": tool.inputSchema
-                },
-                "server": name,
-                "original_name": tool.name
-            }
-            self.all_tools.append(tool_def)
-        logger.info(f"Connected to '{name}' with {len(meta.tools)} tools")
+        async def _safe_close_stack() -> None:
+            try:
+                await server_stack.aclose()
+            except BaseException as close_error:
+                # Some transports can raise ExceptionGroup/RuntimeError while unwinding
+                # after a failed connect; avoid crashing startup because of cleanup.
+                logger.debug(f"Error cleaning up failed connection for '{name}': {close_error}")
+
+        try:
+            # Expand env vars
+            cwd = config.get('cwd', os.getcwd())
+            config = expand_dict_env_vars(config, cwd)
+
+            if "command" in config:
+                params = StdioServerParameters(
+                    command=config['command'],
+                    args=config.get('args', []),
+                    env=config.get('env'),
+                    cwd=config.get('cwd')
+                )
+                transport = await server_stack.enter_async_context(stdio_client(params))
+                read, write = transport
+            elif "url" in config:
+                url = config["url"]
+                headers = config.get("headers", {})
+
+                # Determine connection type by URL suffix or default to StreamableHTTP
+                if url.rstrip("/").endswith("/sse"):
+                    transport = await server_stack.enter_async_context(sse_client(url=url, headers=headers))
+                    read, write = transport
+                else:
+                    # Default to StreamableHTTP if not explicitly /sse
+                    transport = await server_stack.enter_async_context(streamablehttp_client(url=url, headers=headers))
+                    # streamablehttp_client yields (read, write, get_session_id)
+                    read, write, _ = transport
+            else:
+                raise ValueError(f"Invalid MCP server config for '{name}': must have 'command' or 'url'")
+
+            session = await server_stack.enter_async_context(ClientSession(read, write))
+            await session.initialize()
+            self.sessions[name] = session
+            meta = await session.list_tools()
+            for tool in meta.tools:
+                tool_def = {
+                    "type": "function",
+                    "function": {
+                        "name": f"{name}.{tool.name}",
+                        "description": tool.description,
+                        "parameters": tool.inputSchema
+                    },
+                    "server": name,
+                    "original_name": tool.name
+                }
+                self.all_tools.append(tool_def)
+
+            # Transfer ownership of the server stack to the main exit stack
+            self.exit_stack.push_async_callback(server_stack.pop_all().aclose)
+            logger.info(f"Connected to '{name}' with {len(meta.tools)} tools")
+
+        except (SystemExit, KeyboardInterrupt):
+            await _safe_close_stack()
+            raise
+
+        except BaseException as e:
+            # This may include CancelledError depending on runtime.
+            logger.error(f"Failed to connect to MCP server '{name}': {repr(e)}")
+            await _safe_close_stack()
 
     async def call_tool(self, tool_name: str, arguments: dict):
         """Call a specific tool by name with provided arguments."""
