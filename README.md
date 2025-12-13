@@ -9,7 +9,7 @@
 # Ollama MCP Bridge
 
 [![PyPI - Python Version](https://img.shields.io/pypi/v/ollama-mcp-bridge?label=ollama-mcp-bridge-pypi)](https://pypi.org/project/ollama-mcp-bridge/)
-[![Tests](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml)
+[![CI](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/ci.yml)
 [![Test Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test-publish.yml)
 [![Publish](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/publish.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
