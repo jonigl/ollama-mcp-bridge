@@ -166,9 +166,7 @@ class MCPManager:
                     if found_tools:
                         logger.info(f"Server '{name}': enabled tools [{', '.join(found_tools)}]")
                     if missing_tools:
-                        logger.warning(
-                            f"Server '{name}': tools not found in filter [{', '.join(missing_tools)}]"
-                        )
+                        logger.warning(f"Server '{name}': tools not found in filter [{', '.join(missing_tools)}]")
                 elif filter_mode == "exclude":
                     logger.info(
                         f"Connected to '{name}' with {len(filtered_tools)}/{len(meta.tools)} tools "
