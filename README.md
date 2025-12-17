@@ -28,6 +28,8 @@
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
   - [MCP Servers Configuration](#mcp-servers-configuration)
+  - **✨NEW** [Tool Filtering](#tool-filtering)
+  - [Variable Expansion](#variable-expansion)
   - [CORS Configuration](#cors-configuration)
   - [Environment Variables](#environment-variables)
 - [Usage](#usage)
@@ -46,7 +48,8 @@
 
 - 🚀 **Pre-loaded Servers**: All MCP servers are connected at startup from JSON configuration
 - 📝 **JSON Configuration**: Configure multiple servers with complex commands and environments
-- 🌐 **Remote MCP Support**: Connect to MCP servers over HTTP (StreamableHTTP) or SSE (when the URL ends with `/sse`)
+- 🌐 **Multiple Transport Types**: Connect to MCP servers via stdio (local processes), HTTP (StreamableHTTP), or SSE
+- 🎯 **Tool Filtering**: Filter tools per server with include/exclude modes for fine-grained control
 - 🧩 **Config Variable Expansion**: Supports `${env:VAR_NAME}` and `${workspaceFolder}` in config strings
 - 🔗 **Tool Integration**: Automatic tool call processing and response integration
 - 🔄 **Multi-Round Tool Execution**: Automatically loops through multiple rounds of tool calls until completion
@@ -146,6 +149,11 @@ ollama-mcp-bridge
 
 ### MCP Servers Configuration
 
+You can configure MCP servers in three ways:
+- **Local process (stdio)**: `{"command": "...", "args": [...], "env": {...}}`
+- **Remote endpoint (StreamableHTTP)**: `{"url": "https://..."}` - Uses StreamableHTTP by default
+- **Remote endpoint (SSE)**: `{"url": "https://.../sse"}` - If the URL ends with `/sse`, the bridge connects via Server-Sent Events
+
 Create an MCP configuration file at `mcp-config.json` with your servers:
 
 ```json
@@ -161,6 +169,10 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
       ],
       "env": {
         "MCP_LOG_LEVEL": "ERROR"
+      },
+      "toolFilter": {
+        "mode": "include",
+        "tools": ["get_current_temperature", "get_forecast"]
       }
     },
     "remote_streamable_http": {
@@ -175,16 +187,71 @@ Create an MCP configuration file at `mcp-config.json` with your servers:
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "/tmp"
-      ]
+      ],
+      "toolFilter": {
+        "mode": "exclude",
+        "tools": ["delete_file", "write_file"]
+      }
     }
   }
 }
 ```
 
-You can configure MCP servers in two ways:
-- **Local process**: `{"command": "...", "args": [...], "env": {...}}`
-- **Remote endpoint**: `{"url": "https://..."}`
-  - If the URL ends with `/sse`, the bridge connects via SSE. Otherwise it uses StreamableHTTP.
+#### Tool Filtering
+
+You can filter which tools from an MCP server are made available to Ollama using the optional `toolFilter` configuration:
+
+- **`toolFilter`** (optional): Object with filtering options
+  - **`mode`**: Either `"include"` (allow-list) or `"exclude"` (deny-list). Defaults to `"include"` if not specified.
+  - **`tools`**: Array of exact tool names to include or exclude
+
+**Behavior:**
+- If `toolFilter` is not set or `tools` array is empty, all tools from the server are loaded (default behavior)
+- **Include mode** (allow-list): Only the tools listed in the `tools` array are made available. If a listed tool is not found on the server, a warning is logged but the server connection continues.
+- **Exclude mode** (deny-list): All tools except those listed in the `tools` array are made available. Listed tools are filtered out.
+- Tool names must match exactly (case-sensitive)
+- Invalid `mode` values cause the application to exit with an error message
+
+**Example with include mode (default):**
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "uv",
+      "args": ["--directory", "./mock-weather-mcp-server", "run", "main.py"],
+      "toolFilter": {
+        "tools": ["get_current_temperature", "get_forecast"]
+      }
+    }
+  }
+}
+```
+
+**Example with explicit modes:**
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "uv",
+      "args": ["--directory", "./mock-weather-mcp-server", "run", "main.py"],
+      "toolFilter": {
+        "mode": "include",
+        "tools": ["get_current_temperature"]
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "toolFilter": {
+        "mode": "exclude",
+        "tools": ["delete_file", "write_file"]
+      }
+    }
+  }
+}
+```
+
+#### Variable Expansion
 
 The config also supports simple expansion in any string value:
 - `${workspaceFolder}` resolves to the directory containing the config file

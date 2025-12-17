@@ -70,4 +70,4 @@ jobs:
         run: uv sync --dev
 
       - name: Run unit tests
-        run: uv run pytest tests/test_unit.py -v
+        run: uv run pytest tests/ --ignore=tests/test_api.py -v

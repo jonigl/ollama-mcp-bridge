@@ -1,6 +1,7 @@
 """MCP Server Management"""
 
 import json
+import sys
 from typing import List, Dict
 from contextlib import AsyncExitStack
 import os
@@ -66,6 +67,16 @@ class MCPManager:
                 logger.debug(f"Error cleaning up failed connection for '{name}': {close_error}")
 
         try:
+            # Validate toolFilter configuration if present
+            tool_filter = config.get("toolFilter", {})
+            if tool_filter:
+                mode = tool_filter.get("mode", "include")
+                if mode not in ["include", "exclude"]:
+                    logger.error(
+                        f"Invalid toolFilter mode '{mode}' for server '{name}'. Must be 'include' or 'exclude'."
+                    )
+                    sys.exit(1)
+
             # Expand env vars
             cwd = config.get("cwd", os.getcwd())
             config = expand_dict_env_vars(config, cwd)
@@ -96,7 +107,40 @@ class MCPManager:
             await session.initialize()
             self.sessions[name] = session
             meta = await session.list_tools()
-            for tool in meta.tools:
+
+            # Apply tool filtering if configured
+            tool_filter = config.get("toolFilter", {})
+            filter_mode = tool_filter.get("mode", "include")
+            filter_tools = tool_filter.get("tools", [])
+
+            all_tool_names = [tool.name for tool in meta.tools]
+            filtered_tools = []
+            found_tools = []
+            missing_tools = []
+            excluded_tools = []
+
+            if filter_tools:
+                if filter_mode == "include":
+                    # Include mode: only add tools in the filter list
+                    for tool in meta.tools:
+                        if tool.name in filter_tools:
+                            filtered_tools.append(tool)
+                            found_tools.append(tool.name)
+                    # Track which filter tools were not found
+                    missing_tools = [t for t in filter_tools if t not in all_tool_names]
+                elif filter_mode == "exclude":
+                    # Exclude mode: add all tools except those in the filter list
+                    for tool in meta.tools:
+                        if tool.name not in filter_tools:
+                            filtered_tools.append(tool)
+                        else:
+                            excluded_tools.append(tool.name)
+            else:
+                # No filter or empty filter list: add all tools
+                filtered_tools = list(meta.tools)
+
+            # Add filtered tools to the manager
+            for tool in filtered_tools:
                 tool_def = {
                     "type": "function",
                     "function": {
@@ -111,7 +155,32 @@ class MCPManager:
 
             # Transfer ownership of the server stack to the main exit stack
             self.exit_stack.push_async_callback(server_stack.pop_all().aclose)
-            logger.info(f"Connected to '{name}' with {len(meta.tools)} tools")
+
+            # Log connection results with filtering information
+            if filter_tools:
+                if filter_mode == "include":
+                    logger.info(
+                        f"Connected to '{name}' with {len(filtered_tools)}/{len(meta.tools)} tools "
+                        f"({len(meta.tools) - len(filtered_tools)} filtered)"
+                    )
+                    if found_tools:
+                        logger.info(f"Server '{name}': enabled tools [{', '.join(found_tools)}]")
+                    if missing_tools:
+                        logger.warning(
+                            f"Server '{name}': tools not found in filter [{', '.join(missing_tools)}]"
+                        )
+                elif filter_mode == "exclude":
+                    logger.info(
+                        f"Connected to '{name}' with {len(filtered_tools)}/{len(meta.tools)} tools "
+                        f"({len(excluded_tools)} excluded)"
+                    )
+                    if excluded_tools:
+                        logger.info(f"Server '{name}': excluded tools [{', '.join(excluded_tools)}]")
+            else:
+                all_tool_names_list = [tool.name for tool in filtered_tools]
+                logger.info(f"Connected to '{name}' with {len(meta.tools)} tools")
+                if all_tool_names_list:
+                    logger.info(f"Server '{name}': available tools [{', '.join(all_tool_names_list)}]")
 
         except (SystemExit, KeyboardInterrupt):
             await _safe_close_stack()
