@@ -210,3 +210,48 @@ def test_system_prompt_prepended():
     out3 = ps._maybe_prepend_system_prompt([])
     assert out3[0]["role"] == "system"
     assert out3[0]["content"] == "You are a helpful assistant."
+
+
+def test_is_port_in_use():
+    """Test the is_port_in_use utility."""
+    import socket
+    from ollama_mcp_bridge.utils import is_port_in_use
+
+    # Find an open port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        _, port = s.getsockname()
+
+    # The port should be free now that the socket is closed
+    has_error, error_msg = is_port_in_use("127.0.0.1", port)
+    assert not has_error
+    assert error_msg is None
+
+    # Now bind it and check
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", port))
+        has_error, error_msg = is_port_in_use("127.0.0.1", port)
+        assert has_error
+        assert "already in use" in error_msg
+
+    # Test invalid host
+    has_error, error_msg = is_port_in_use("invalid.host.name.test", 8000)
+    assert has_error
+    assert error_msg is not None
+
+
+def test_cli_exit_if_port_in_use(monkeypatch):
+    """Test that the CLI app exits if the port is already in use."""
+    from ollama_mcp_bridge.main import cli_app
+    import typer
+    from unittest.mock import MagicMock
+
+    # Mock dependencies to avoid actually running the app
+    monkeypatch.setattr("ollama_mcp_bridge.main.is_port_in_use", lambda h, p: (True, "Port already in use"))
+    monkeypatch.setattr("ollama_mcp_bridge.main.validate_cli_inputs", MagicMock())
+
+    try:
+        cli_app(port=8000, version=False)
+        assert False, "Should have raised typer.Exit(1)"
+    except typer.Exit as e:
+        assert e.exit_code == 1
