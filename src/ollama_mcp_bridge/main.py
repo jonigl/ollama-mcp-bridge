@@ -42,7 +42,7 @@ def cli_app(
         raise typer.Exit(0)
     validate_cli_inputs(config, host, port, ollama_url, max_tool_rounds, system_prompt)
 
-    # Check if port is available
+    # Check if port is available and host is valid before starting
     has_error, error_msg = is_port_in_use(host, port)
     if has_error:
         logger.error(error_msg)
