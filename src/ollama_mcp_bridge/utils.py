@@ -3,6 +3,8 @@
 import os
 import json
 import re
+import socket
+import errno
 import httpx
 import typer
 from typer import BadParameter
@@ -60,6 +62,27 @@ def get_ollama_proxy_timeout_config() -> Tuple[bool, Optional[float]]:
         return True, None
 
     return True, timeout_ms / 1000.0
+
+
+def is_port_in_use(host: str, port: int) -> Tuple[bool, Optional[str]]:
+    """Check if a port is already in use on a given host.
+
+    Returns:
+        Tuple[bool, Optional[str]]: (has_error, error_message)
+        - (False, None): Port is available
+        - (True, error_msg): Port check failed with specific error message
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind((host, port))
+            return False, None
+        except socket.error as e:
+            if e.errno == errno.EADDRINUSE:
+                return True, f"Port {port} is already in use on {host}. Please use a different port with --port."
+            elif e.errno == errno.EADDRNOTAVAIL:
+                return True, f"Cannot bind to host '{host}': address not available. Please check the --host value."
+            else:
+                return True, f"Cannot bind to {host}:{port}: {e.strerror}"
 
 
 def configure_cors(app):

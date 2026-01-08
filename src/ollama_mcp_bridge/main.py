@@ -8,7 +8,7 @@ from loguru import logger
 from typing import Optional
 
 from .api import app
-from .utils import check_ollama_health, check_for_updates, validate_cli_inputs
+from .utils import check_ollama_health, check_for_updates, validate_cli_inputs, is_port_in_use
 from . import __version__
 
 
@@ -41,6 +41,12 @@ def cli_app(
         asyncio.run(check_for_updates(__version__, print_message=True))
         raise typer.Exit(0)
     validate_cli_inputs(config, host, port, ollama_url, max_tool_rounds, system_prompt)
+
+    # Check if port is available
+    has_error, error_msg = is_port_in_use(host, port)
+    if has_error:
+        logger.error(error_msg)
+        raise typer.Exit(1)
 
     # Store config in app state so lifespan can access it
     app.state.config_file = config
