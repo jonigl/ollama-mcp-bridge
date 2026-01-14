@@ -80,6 +80,7 @@ class ProxyService:
     async def _make_final_llm_call(self, endpoint: str, payload: Dict[str, Any], messages: list) -> Dict[str, Any]:
         """Make a final LLM call without tools to get final answer after tool execution"""
         final_payload = dict(payload)
+        final_payload["stream"] = False  # Explicitly disable streaming to get single JSON response
         final_payload["messages"] = messages
         final_payload["tools"] = None  # Don't allow more tool calls
         resp = await self.http_client.post(f"{self.mcp_manager.ollama_url}{endpoint}", json=final_payload)
@@ -102,6 +103,7 @@ class ProxyService:
     async def _proxy_with_tools_non_streaming(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Handle non-streaming chat requests with tools"""
         payload = dict(payload)
+        payload["stream"] = False  # Explicitly disable streaming to get single JSON response
         payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
         messages = payload.get("messages") or []
         messages = self._maybe_prepend_system_prompt(messages)
