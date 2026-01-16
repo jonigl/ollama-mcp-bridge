@@ -197,8 +197,47 @@ class MCPManager:
         server_name = tool_info["server"]
         original_name = tool_info["original_name"]
         session = self.sessions[server_name]
-        result = await session.call_tool(original_name, arguments)
-        return result.content[0].text
+
+        try:
+            result = await session.call_tool(original_name, arguments)
+
+            # Defensive extraction of tool result content
+            if not result or not hasattr(result, 'content'):
+                logger.warning(f"Tool {tool_name} returned unexpected result structure: {result}")
+                return f"Tool returned an unexpected response format: {str(result)}"
+
+            if not result.content or len(result.content) == 0:
+                logger.warning(f"Tool {tool_name} returned empty content")
+                return "Tool returned no content"
+
+            # Try to extract text from the first content item
+            first_content = result.content[0]
+
+            # Check for 'text' attribute (standard)
+            if hasattr(first_content, 'text'):
+                return first_content.text
+
+            # Fallback: check for other common attributes
+            if hasattr(first_content, 'data'):
+                content = first_content.data
+                return json.dumps(content) if isinstance(content, (dict, list)) else str(content)
+
+            if hasattr(first_content, 'value'):
+                content = first_content.value
+                return json.dumps(content) if isinstance(content, (dict, list)) else str(content)
+
+            # Last resort: stringify the content item
+            logger.warning(f"Tool {tool_name} content has unexpected structure: {first_content}")
+            return str(first_content)
+
+        except Exception as e:
+            # Catch validation errors from MCP protocol layer (e.g., Pydantic errors from malformed JSON)
+            error_type = type(e).__name__
+            error_msg = str(e)
+            logger.error(f"Tool {tool_name} execution failed: {error_type}: {error_msg}")
+
+            # Return a formatted error message that the LLM can understand
+            return f"Error executing tool: {error_type}: {error_msg}"
 
     async def cleanup(self):
         """Cleanup all sessions and close HTTP client."""
