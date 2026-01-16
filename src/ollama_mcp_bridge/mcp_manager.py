@@ -202,7 +202,7 @@ class MCPManager:
             result = await session.call_tool(original_name, arguments)
 
             # Defensive extraction of tool result content
-            if not result or not hasattr(result, 'content'):
+            if not result or not hasattr(result, "content"):
                 logger.warning(f"Tool {tool_name} returned unexpected result structure: {result}")
                 return f"Tool returned an unexpected response format: {str(result)}"
 
@@ -214,15 +214,15 @@ class MCPManager:
             first_content = result.content[0]
 
             # Check for 'text' attribute (standard)
-            if hasattr(first_content, 'text'):
+            if hasattr(first_content, "text"):
                 return first_content.text
 
             # Fallback: check for other common attributes
-            if hasattr(first_content, 'data'):
+            if hasattr(first_content, "data"):
                 content = first_content.data
                 return json.dumps(content) if isinstance(content, (dict, list)) else str(content)
 
-            if hasattr(first_content, 'value'):
+            if hasattr(first_content, "value"):
                 content = first_content.value
                 return json.dumps(content) if isinstance(content, (dict, list)) else str(content)
 
