@@ -502,6 +502,8 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 - [**MCP Client for Ollama**](https://github.com/jonigl/mcp-client-for-ollama) - A text-based user interface (TUI) client for interacting with MCP servers using Ollama. Features include multi-server support, dynamic model switching, streaming responses, tool management, human-in-the-loop capabilities, thinking mode, full model parameters configuration, custom system prompt and saved preferences. Built for developers working with local LLMs.
 
+- [**simple-ollama-chat**](https://github.com/jonigl/simple-ollama-chat) – A simple, user-friendly chat client for Ollama that works seamlessly with the Ollama MCP Bridge. Lets you interact with models and use all MCP server tools integrated via the bridge, with a clean UI and easy setup. Ideal for quickly testing, chatting, and exploring tool-augmented LLMs through the bridge.
+
 ## Inspiration and Credits
 
 This project is based on the basic MCP client from my Medium article: [Build an MCP Client in Minutes: Local AI Agents Just Got Real](https://medium.com/@jonigl/build-an-mcp-client-in-minutes-local-ai-agents-just-got-real-a10e186a560f).
