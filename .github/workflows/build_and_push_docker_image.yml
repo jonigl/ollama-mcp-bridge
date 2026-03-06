@@ -60,6 +60,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            VERSION=${{ github.event.release.tag_name || inputs.tag_name }}
           provenance: false # Prevents unknown/unknown Attestation Manifests
           sbom: false # Prevents SBOM Manifests
           cache-from: type=gha
