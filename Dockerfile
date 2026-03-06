@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install uv
-ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_OLLAMA_MCP_BRIDGE=0.1.0
+ARG VERSION=0.1.0
+ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_OLLAMA_MCP_BRIDGE=${VERSION}
 
 COPY . ./
 
