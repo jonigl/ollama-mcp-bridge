@@ -5,7 +5,7 @@ description: |
 
 on:
   release:
-    types: 
+    types:
       - created
 
   workflow_dispatch:
@@ -13,46 +13,15 @@ on:
       tag_name:
         type: string
         required: true
-        description: |
-          Name of the tag to use for publish (ex. v1.0.0-test)
+        description: 'Name of the tag to use for publish (ex. v1.0.0-test)'
 
 env:
   IMAGE_NAME: 'ollama-mcp-bridge'
 
 jobs:
-  define-matrix:
-    name: 'Define matrix'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Matrix'
-        id: matrix
-        run: |
-          echo "matrix=$(cat <<'EOF' | jq -c .
-            [
-              {
-                "arch": "amd64",
-                "os": "ubuntu-22.04",
-                "platform": "linux/amd64"
-              },
-              {
-                "arch": "arm64",
-                "os": "ubuntu-22.04-arm",
-                "platform": "linux/arm64"
-              }
-            ]
-          EOF)" >> "$GITHUB_OUTPUT"
-    
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
-
   build-and-push:
-    name: 'Build ${{ matrix.arch }}'
-    needs: [define-matrix]
-    strategy:
-      matrix:
-        include: ${{ fromJSON(needs.define-matrix.outputs.matrix) }}
-
-    runs-on: ${{ matrix.os }}
+    name: 'Build and Push Multi-Arch Image'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -60,7 +29,13 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
-      
+
+      - name: 'Set up QEMU'
+        uses: docker/setup-qemu-action@v3
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+
       - name: 'Docker login'
         uses: docker/login-action@v3
         with:
@@ -68,81 +43,40 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 'Build and push image'
-        run: |
-          IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
-          
-          docker buildx build \
-            --provenance=false \
-            --sbom=false \
-            --platform ${{ matrix.platform }} \
-            -t "${IMAGE}:${{ github.sha }}-${{ matrix.arch }}" \
-            -t "${IMAGE}:${{ github.event.release.tag_name || inputs.tag_name }}-${{ matrix.arch }}" \
-            -t "${IMAGE}:latest-${{ matrix.arch }}" \
-            --push \
-            .
-          
-    outputs:
-      matrix: ${{ needs.define-matrix.outputs.matrix }}
-      
-  create-manifest:
-    name: 'Create manifest'
-    needs: [build-and-push]
-    runs-on: ubuntu-22.04
-    permissions:
-      packages: write
-
-    steps:
-      - name: 'Docker login'
-        uses: docker/login-action@v3
+      - name: 'Docker metadata'
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: 'Create Multi-Arch Manifest'
-        run: |
-          IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}
-          
-          MATRIX_JSON='${{ needs.build-and-push.outputs.matrix }}'
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+            type=raw,value=${{ github.event.release.tag_name || inputs.tag_name }}
 
-          ARCHS=($(echo "$MATRIX_JSON" | jq -r '.[].arch'))
-          
-          image_list=""
-          for arch in "${ARCHS[@]}"; do
-            image_list="$image_list $IMAGE:${{ github.event.release.tag_name || inputs.tag_name }}-$arch"
-          done
-          image_list=$(echo $image_list | xargs)
+      - name: 'Build and push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          echo "\"$image_list\""
-          
-          docker buildx imagetools create -t $IMAGE:${{ github.sha }} $image_list
-          docker buildx imagetools create -t $IMAGE:${{ github.event.release.tag_name || inputs.tag_name }} $image_list
-          docker buildx imagetools create -t $IMAGE:latest $image_list
-    
-    outputs:
-      matrix: ${{ needs.build-and-push.outputs.matrix }}
-      
   verify-manifest:
     name: 'Verify manifest'
     runs-on: ubuntu-latest
-    needs: [create-manifest]
+    needs: [build-and-push]
     steps:
       - name: 'Verify'
         run: |
-          MATRIX_JSON='${{ needs.create-manifest.outputs.matrix }}'
-          
-          ARCHS=($(echo "$MATRIX_JSON" | jq -r '.[].arch'))
-          IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}:latest
+          IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}:latest
           OUTPUT=$(docker buildx imagetools inspect $IMAGE)
-          
           echo "$OUTPUT"
-          
-          for arch in "${ARCHS[@]}"; do
+          for arch in amd64 arm64; do
             if ! echo "$OUTPUT" | grep -q "$arch"; then
               echo -e "\x1b[1;31mPlatform $arch is missing in manifest."
               exit 1
             fi
           done
-          
           echo -e "\x1b[1;32mAll expected platforms found in manifest."
