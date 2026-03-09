@@ -74,6 +74,7 @@ def is_port_in_use(host: str, port: int) -> Tuple[bool, Optional[str]]:
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, port))
             return False, None
         except socket.error as e:
