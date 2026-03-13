@@ -28,8 +28,8 @@
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
   - [MCP Servers Configuration](#mcp-servers-configuration)
-  - **✨NEW** [Tool Filtering](#tool-filtering)
-  - [Variable Expansion](#variable-expansion)
+    - [Tool Filtering](#tool-filtering)
+    - [Variable Expansion](#variable-expansion)
   - [CORS Configuration](#cors-configuration)
   - [Environment Variables](#environment-variables)
 - [Usage](#usage)
@@ -92,16 +92,48 @@ pip install --upgrade ollama-mcp-bridge
 ### Or, run with Docker Compose
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 This uses the included [docker-compose.yml](./docker-compose.yml) file which:
-- Builds the bridge from source using this Dockerfile [Dockerfile](./Dockerfile)
+- Builds the bridge from source using the [Dockerfile](./Dockerfile)
 - Connects to Ollama running on the host machine (`host.docker.internal:11434`)
 - Maps the configuration file from [./mcp-config.json](./mcp-config.json) (includes mock [weather server for demo](./mock-weather-mcp-server))
+- Exposes port `8000` on the host
 - Allows all CORS origins (configurable via `CORS_ORIGINS` environment variable)
 - Supports configurable Ollama request timeouts via `OLLAMA_PROXY_TIMEOUT`
 
+> [!TIP]
+> To skip the local build and use the pre-built image from GitHub Container Registry instead, replace the `build:` block in `docker-compose.yml` with:
+> ```yaml
+> image: ghcr.io/jonigl/ollama-mcp-bridge:latest
+> ```
+
+### Or, run with Docker only
+
+Pre-built multi-arch images (`linux/amd64` and `linux/arm64`) are published to the [GitHub Container Registry](https://github.com/jonigl/ollama-mcp-bridge/pkgs/container/ollama-mcp-bridge) on every release. Available tags:
+- `latest` — most recent stable release
+- `vX.Y.Z` — specific version (e.g. `v0.10.0`)
+- `sha-<commit>` — exact commit SHA build
+
+```bash
+docker run -p 8000:8000 \
+  -e OLLAMA_URL=http://host.docker.internal:11434 \
+  -v "$PWD/mcp-config.json:/mcp-config.json" \
+  -v "$PWD/mock-weather-mcp-server:/mock-weather-mcp-server" \
+  -w / \
+  ghcr.io/jonigl/ollama-mcp-bridge:latest
+```
+
+Key flags:
+- `-p 8000:8000` — exposes the bridge on your host at port `8000`
+- `-e OLLAMA_URL=http://host.docker.internal:11434` — routes Ollama traffic to the host machine (required on macOS and Windows; on Linux use `--network host` or the host's IP instead)
+- `-v "$PWD/mcp-config.json:/mcp-config.json"` — mounts your local config into the container
+- `-v "$PWD/mock-weather-mcp-server:/mock-weather-mcp-server"` — mounts the mock MCP server **without** `:ro` so `uv` can create its `.venv` inside the directory
+- `-w /` — sets the working directory to `/` so relative paths in `mcp-config.json` resolve correctly
+
+> [!NOTE]
+> On Linux, `host.docker.internal` may not resolve automatically. Use `--network host` and keep `OLLAMA_URL=http://localhost:11434`, or replace it with your host's LAN IP.
 
 ### Or, install from source
 
@@ -313,7 +345,7 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8080,https://app.example.co
 > Using `CORS_ORIGINS="*"` allows all origins and is not recommended for production. Always specify exact origins for security.
 
 
-### Environment Variables:
+### Environment Variables
 - `CORS_ORIGINS`: Comma-separated list of allowed origins (default: `*`)
   - `*` allows all origins (shows warning in logs)
   - Example: `CORS_ORIGINS="http://localhost:3000,https://myapp.com" ollama-mcp-bridge`
