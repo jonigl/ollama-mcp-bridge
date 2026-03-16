@@ -20,7 +20,6 @@ tests/
 
 # Dev / example servers
 misc/
-mock-weather-mcp-server/
 
 # Python artifacts
 __pycache__/
