@@ -69,6 +69,8 @@ jobs:
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
             type=raw,value=${{ github.event.release.tag_name || inputs.tag_name }}
             type=sha,format=long
+          labels: |
+            org.opencontainers.image.description=Extend the Ollama API with dynamic AI tool integration from multiple MCP (Model Context Protocol) servers. Fully compatible, transparent, and developer-friendly, ideal for building powerful local LLM applications, AI agents, and custom chatbots
 
       - name: 'Build and push'
         uses: docker/build-push-action@v6
