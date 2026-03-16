@@ -146,14 +146,11 @@ Key flags:
 git clone https://github.com/jonigl/ollama-mcp-bridge.git
 cd ollama-mcp-bridge
 
-# Install dependencies using uv
-uv sync
-
 # Start Ollama (if not already running)
 ollama serve
 
-# Run the bridge (preferred)
-ollama-mcp-bridge
+# Run the bridge
+uv run ollama-mcp-bridge
 ```
 
 If you want to install the project in editable mode (for development):
