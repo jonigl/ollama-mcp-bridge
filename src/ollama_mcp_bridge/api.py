@@ -11,7 +11,6 @@ from .schemas import CHAT_EXAMPLE
 from .utils import check_for_updates, configure_cors
 from . import __version__
 
-
 # Create FastAPI app
 app = FastAPI(
     title="Ollama MCP Bridge",

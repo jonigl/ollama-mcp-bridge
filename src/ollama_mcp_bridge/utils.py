@@ -14,7 +14,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import sys
 from typing import Dict, Any, Optional, Tuple
 
-
 _OLLAMA_PROXY_TIMEOUT_ENV = "OLLAMA_PROXY_TIMEOUT"  # milliseconds
 _ollama_proxy_timeout_disabled_warned = False
 
