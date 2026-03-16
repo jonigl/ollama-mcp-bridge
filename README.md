@@ -23,7 +23,7 @@
   - [Quick Start](#quick-start)
   - [Or, install from PyPI with pip](#or-install-from-pypi-with-pip)
   - [Or, run with Docker Compose](#or-run-with-docker-compose)
-  - [Or, run with Docker only](#or-run-with-docker-only)
+  - **✨NEW** [Or, run with Docker only](#or-run-with-docker-only)
   - [Or, install from source](#or-install-from-source)
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
@@ -67,6 +67,7 @@
 - 📊 **Structured Logging**: Uses loguru for comprehensive logging
 - 📦 **PyPI Package**: Easily installable via pip or uv from PyPI
 - 🗣️ **System Prompt Configuration**: Allows setting a system prompt for the assistant's behavior
+- 🐳 **Multi-Arch Docker Images** ✨ **NEW**: Pre-built `linux/amd64` and `linux/arm64` images published to GitHub Container Registry on every release
 
 ## Requirements
 
@@ -110,6 +111,9 @@ This uses the included [docker-compose.yml](./docker-compose.yml) file which:
 > ```
 
 ### Or, run with Docker only
+
+> [!NOTE]
+> ✨ **NEW**: Pre-built multi-arch Docker images (`linux/amd64` and `linux/arm64`) are now published automatically to the GitHub Container Registry on every release. No local build required!
 
 Pre-built multi-arch images (`linux/amd64` and `linux/arm64`) are published to the [GitHub Container Registry](https://github.com/jonigl/ollama-mcp-bridge/pkgs/container/ollama-mcp-bridge) on every release. Available tags:
 - `latest` — most recent stable release
