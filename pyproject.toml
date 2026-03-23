@@ -10,7 +10,7 @@ authors = [
   { name = "Jonathan Gastón Löwenstern" },
 ]
 dependencies = [
-    "fastapi~=0.119.0",
+    "fastapi>=0.119,<0.136",
     "httpx~=0.28.0",
     "loguru~=0.7.3",
     "mcp>=1.9.4,<2.0.0",
