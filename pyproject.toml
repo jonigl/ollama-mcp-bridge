@@ -16,7 +16,7 @@ dependencies = [
     "mcp>=1.9.4,<2.0.0",
     "packaging>=25.0",
     "typer~=0.24.0",
-    "uvicorn~=0.38.0",
+    "uvicorn>=0.38,<0.45",
 ]
 
 [project.urls]
