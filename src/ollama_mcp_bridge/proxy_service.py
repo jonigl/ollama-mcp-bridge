@@ -104,7 +104,8 @@ class ProxyService:
         """Handle non-streaming chat requests with tools"""
         payload = dict(payload)
         payload["stream"] = False  # Explicitly disable streaming to get single JSON response
-        payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
+        current_tools = payload.get("tools", [])
+        payload["tools"] = current_tools + self.mcp_manager.all_tools if self.mcp_manager.all_tools else current_tools
         messages = payload.get("messages") or []
         messages = self._maybe_prepend_system_prompt(messages)
 
@@ -148,7 +149,8 @@ class ProxyService:
         """Handle streaming chat requests with tools"""
 
         payload = dict(payload)
-        payload["tools"] = self.mcp_manager.all_tools if self.mcp_manager.all_tools else None
+        current_tools = payload.get("tools", [])
+        payload["tools"] = current_tools + self.mcp_manager.all_tools if self.mcp_manager.all_tools else current_tools
         messages = list(payload.get("messages") or [])
         messages = self._maybe_prepend_system_prompt(messages)
 
@@ -219,6 +221,10 @@ class ProxyService:
         for tool_call in tool_calls:
             tool_name = tool_call["function"]["name"]
             arguments = tool_call["function"]["arguments"]
+            if not self.mcp_manager.is_tool_present(tool_name):
+                logger.info(f"Tool {tool_name} is not found in the MCP config, passing it to the caller instead")
+                continue
+
             tool_result = await self.mcp_manager.call_tool(tool_name, arguments)
             logger.debug(f"Tool {tool_name} called with args {arguments}, result: {tool_result}")
             messages.append({"role": "tool", "tool_name": tool_name, "content": tool_result})

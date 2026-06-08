@@ -144,7 +144,7 @@ class MCPManager:
                 tool_def = {
                     "type": "function",
                     "function": {
-                        "name": f"{name}.{tool.name}",
+                        "name": f"{name}_{tool.name}",
                         "description": tool.description,
                         "parameters": tool.inputSchema,
                     },
@@ -189,9 +189,16 @@ class MCPManager:
             logger.error(f"Failed to connect to MCP server '{name}': {repr(e)}")
             await _safe_close_stack()
 
+    def get_tool_info(self, tool_name: str) -> dict | None: 
+        """Get tool info by name, or None if not found."""
+        return next((t for t in self.all_tools if t["function"]["name"] == tool_name), None)
+
+    def is_tool_present(self, tool_name: str) -> bool:
+        return self.get_tool_info(tool_name) is not None
+
     async def call_tool(self, tool_name: str, arguments: dict):
         """Call a specific tool by name with provided arguments."""
-        tool_info = next((t for t in self.all_tools if t["function"]["name"] == tool_name), None)
+        tool_info = self.get_tool_info(tool_name)
         if not tool_info:
             raise ValueError(f"Tool {tool_name} not found")
         server_name = tool_info["server"]
