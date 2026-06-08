@@ -3,7 +3,7 @@ FROM python:3.10.15-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
