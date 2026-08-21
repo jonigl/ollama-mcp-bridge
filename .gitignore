@@ -16,3 +16,5 @@ _version.py
 # Temporary files
 temp/
 /.vs
+.DS_Store
+
