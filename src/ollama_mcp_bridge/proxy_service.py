@@ -189,27 +189,38 @@ class ProxyService:
             current_payload = dict(payload)
             current_payload["messages"] = messages
 
-            tool_calls = []
             response_text = ""
+            final_chunk = None
+            # Parallel tool calls arrive one per chunk, so collect them, don't replace
+            pending_calls: Dict[Any, Any] = {}
 
             ndjson_iter = iter_ndjson_chunks(stream_ollama(current_payload))
             async for json_obj in ndjson_iter:
-                # Stream all chunks directly to the client
-                buffer_chunk = json.dumps(json_obj).encode() + b"\n"
-                yield buffer_chunk
-
                 extracted_calls = self._extract_tool_calls(json_obj)
-                if extracted_calls:
-                    tool_calls = extracted_calls
+                for tool_call in extracted_calls:
+                    pending_calls[tool_call.get("id") or len(pending_calls)] = tool_call
 
                 if json_obj.get("done"):
-                    response_text = json_obj.get("message", {}).get("content", "")
-                    if extracted_calls:
-                        tool_calls = extracted_calls
+                    # Hold it back: only the last round's terminal chunk is the client's
+                    final_chunk = json_obj
                     break
 
+                message = json_obj.get("message", {})
+                # The terminal chunk has no content when streaming, so accumulate it here
+                response_text += message.get("content", "") or ""
+
+                if extracted_calls:
+                    # The bridge runs these tools itself, so the client must not see them
+                    message = {k: v for k, v in message.items() if k != "tool_calls"}
+                    json_obj = {**json_obj, "message": message}
+
+                yield json.dumps(json_obj).encode() + b"\n"
+
+            tool_calls = list(pending_calls.values())
             if not tool_calls:
                 # No tool calls required, streaming complete
+                if final_chunk:
+                    yield json.dumps(final_chunk).encode() + b"\n"
                 break
 
             # Tool calls detected; execute them

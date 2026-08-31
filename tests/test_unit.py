@@ -294,6 +294,192 @@ async def test_proxy_service_merges_request_headers_with_configured_ollama_heade
         await mgr.http_client.aclose()
 
 
+@pytest.mark.anyio
+async def test_streaming_tool_round_is_not_exposed_to_client(monkeypatch):
+    """A tool-call round must not reach the client as tool calls nor as a completion event."""
+    from ollama_mcp_bridge import proxy_service
+    from ollama_mcp_bridge.mcp_manager import MCPManager
+
+    responses = iter(
+        [
+            [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [{"function": {"name": "test_tool", "arguments": {}}}],
+                    },
+                    "done": False,
+                },
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+            [
+                {"message": {"role": "assistant", "content": "Final answer"}, "done": False},
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+        ]
+    )
+
+    async def fake_iter_ndjson_chunks(_):
+        for response in next(responses):
+            yield response
+
+    async def fake_call_tool(_, __):
+        return "tool result"
+
+    monkeypatch.setattr(proxy_service, "iter_ndjson_chunks", fake_iter_ndjson_chunks)
+    manager = MCPManager()
+    manager.all_tools = [{"type": "function", "function": {"name": "test_tool"}}]
+    manager.call_tool = fake_call_tool
+    service = proxy_service.ProxyService(manager)
+    try:
+        chunks = [
+            json.loads(chunk) async for chunk in service._proxy_with_tools_streaming("/api/chat", {"messages": []})
+        ]
+        # No tool call may reach the client, and the tool round must not look finished
+        assert all("tool_calls" not in chunk["message"] for chunk in chunks)
+        assert sum(1 for chunk in chunks if chunk.get("done")) == 1
+        assert chunks[-1]["done"] is True
+        assert "".join(chunk["message"].get("content", "") for chunk in chunks) == "Final answer"
+    finally:
+        await service.cleanup()
+        await manager.http_client.aclose()
+
+
+@pytest.mark.anyio
+async def test_streaming_keeps_content_and_thinking_of_a_tool_round(monkeypatch):
+    """Only the tool calls are stripped: content and thinking from that round still stream."""
+    from ollama_mcp_bridge import proxy_service
+    from ollama_mcp_bridge.mcp_manager import MCPManager
+
+    responses = iter(
+        [
+            [
+                {"message": {"role": "assistant", "content": "", "thinking": "I need the tool"}, "done": False},
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Let me check. ",
+                        "tool_calls": [{"function": {"name": "test_tool", "arguments": {}}}],
+                    },
+                    "done": False,
+                },
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+            [
+                {"message": {"role": "assistant", "content": "Final answer"}, "done": False},
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+        ]
+    )
+
+    async def fake_iter_ndjson_chunks(_):
+        for response in next(responses):
+            yield response
+
+    captured = {}
+
+    async def fake_call_tool(_, __):
+        return "tool result"
+
+    monkeypatch.setattr(proxy_service, "iter_ndjson_chunks", fake_iter_ndjson_chunks)
+    manager = MCPManager()
+    manager.all_tools = [{"type": "function", "function": {"name": "test_tool"}}]
+    manager.call_tool = fake_call_tool
+    service = proxy_service.ProxyService(manager)
+
+    original_handle = service._handle_tool_calls
+
+    async def spy(messages, tool_calls):
+        captured["assistant"] = messages[-1]
+        return await original_handle(messages, tool_calls)
+
+    service._handle_tool_calls = spy
+
+    try:
+        chunks = [
+            json.loads(chunk) async for chunk in service._proxy_with_tools_streaming("/api/chat", {"messages": []})
+        ]
+
+        assert chunks == [
+            {"message": {"role": "assistant", "content": "", "thinking": "I need the tool"}, "done": False},
+            {"message": {"role": "assistant", "content": "Let me check. "}, "done": False},
+            {"message": {"role": "assistant", "content": "Final answer"}, "done": False},
+            {"message": {"role": "assistant", "content": ""}, "done": True},
+        ]
+        # No chunk may leak tool calls to the client.
+        assert all("tool_calls" not in chunk["message"] for chunk in chunks)
+        # The content streamed in the tool round is kept in the history sent to Ollama
+        assert captured["assistant"]["content"] == "Let me check. "
+    finally:
+        await service.cleanup()
+        await manager.http_client.aclose()
+
+
+@pytest.mark.anyio
+async def test_streaming_collects_parallel_tool_calls_streamed_in_separate_chunks(monkeypatch):
+    """Ollama streams one complete tool call per chunk, so every one of them must run."""
+    from ollama_mcp_bridge import proxy_service
+    from ollama_mcp_bridge.mcp_manager import MCPManager
+
+    def call_chunk(index, city):
+        return {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": f"call_{index}",
+                        "function": {"index": index, "name": "test_tool", "arguments": {"city": city}},
+                    }
+                ],
+            },
+            "done": False,
+        }
+
+    responses = iter(
+        [
+            [
+                call_chunk(0, "Barcelona"),
+                call_chunk(1, "Madrid"),
+                call_chunk(2, "Tokyo"),
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+            [
+                {"message": {"role": "assistant", "content": "All three"}, "done": False},
+                {"message": {"role": "assistant", "content": ""}, "done": True},
+            ],
+        ]
+    )
+
+    async def fake_iter_ndjson_chunks(_):
+        for response in next(responses):
+            yield response
+
+    executed = []
+
+    async def fake_call_tool(name, arguments):
+        executed.append(arguments["city"])
+        return "20C"
+
+    monkeypatch.setattr(proxy_service, "iter_ndjson_chunks", fake_iter_ndjson_chunks)
+    manager = MCPManager()
+    manager.all_tools = [{"type": "function", "function": {"name": "test_tool"}}]
+    manager.call_tool = fake_call_tool
+    service = proxy_service.ProxyService(manager)
+    try:
+        chunks = [
+            json.loads(chunk) async for chunk in service._proxy_with_tools_streaming("/api/chat", {"messages": []})
+        ]
+
+        # All three parallel calls run: a later chunk must not replace the earlier ones.
+        assert executed == ["Barcelona", "Madrid", "Tokyo"]
+        assert sum(1 for chunk in chunks if chunk.get("done")) == 1
+    finally:
+        await service.cleanup()
+        await manager.http_client.aclose()
+
+
 def test_is_port_in_use():
     """Test the is_port_in_use utility."""
     import socket
