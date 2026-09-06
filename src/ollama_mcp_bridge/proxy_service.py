@@ -57,14 +57,19 @@ class ProxyService:
             "tools": len(self.mcp_manager.all_tools),
         }
 
+    async def _is_client_disconnected(self, request: Optional[Request]) -> bool:
+        """True when the downstream HTTP client has dropped the streaming connection."""
+        return request is not None and await request.is_disconnected()
+
     async def proxy_chat_with_tools(
-        self, payload: Dict[str, Any], stream: bool = False
+        self, payload: Dict[str, Any], stream: bool = False, request: Optional[Request] = None
     ) -> Union[Dict[str, Any], StreamingResponse]:
         """Handle chat requests with potential tool integration
 
         Args:
             payload: The request payload
             stream: Whether to use streaming response
+            request: Incoming FastAPI request; used to abort upstream work on disconnect
 
         Returns:
             Either a dictionary response or a StreamingResponse
@@ -75,7 +80,7 @@ class ProxyService:
         try:
             if stream:
                 return StreamingResponse(
-                    self._proxy_with_tools_streaming(endpoint="/api/chat", payload=payload),
+                    self._proxy_with_tools_streaming(endpoint="/api/chat", payload=payload, request=request),
                     media_type="application/json",
                 )
             else:
@@ -103,7 +108,7 @@ class ProxyService:
         return resp.json()
 
     async def _stream_final_llm_call(
-        self, stream_ollama, payload: Dict[str, Any], messages: list
+        self, stream_ollama, payload: Dict[str, Any], messages: list, request: Optional[Request] = None
     ) -> AsyncGenerator[bytes, None]:
         """Stream a final LLM call without tools to get final answer after tool execution"""
         final_payload = dict(payload)
@@ -112,6 +117,9 @@ class ProxyService:
 
         ndjson_iter = iter_ndjson_chunks(stream_ollama(final_payload))
         async for json_obj in ndjson_iter:
+            if await self._is_client_disconnected(request):
+                logger.info("Client disconnected; stopping final Ollama stream")
+                return
             buffer_chunk = json.dumps(json_obj).encode() + b"\n"
             yield buffer_chunk
 
@@ -161,7 +169,9 @@ class ProxyService:
 
             # Continue loop to get next response
 
-    async def _proxy_with_tools_streaming(self, endpoint: str, payload: Dict[str, Any]) -> AsyncGenerator[bytes, None]:
+    async def _proxy_with_tools_streaming(
+        self, endpoint: str, payload: Dict[str, Any], request: Optional[Request] = None
+    ) -> AsyncGenerator[bytes, None]:
         """Handle streaming chat requests with tools"""
 
         payload = dict(payload)
@@ -178,6 +188,10 @@ class ProxyService:
                     headers=self.ollama_headers,
                 ) as resp:
                     async for chunk in resp.aiter_bytes():
+                        if await self._is_client_disconnected(request):
+                            logger.info("Client disconnected; closing upstream Ollama stream")
+                            await resp.aclose()
+                            return
                         yield chunk
 
         # Get max tool rounds from app state (None means unlimited)
@@ -186,6 +200,10 @@ class ProxyService:
 
         # Loop to handle potentially multiple rounds of tool calls
         while True:
+            if await self._is_client_disconnected(request):
+                logger.info("Client disconnected; stopping chat tool rounds")
+                return
+
             current_payload = dict(payload)
             current_payload["messages"] = messages
 
@@ -196,6 +214,10 @@ class ProxyService:
 
             ndjson_iter = iter_ndjson_chunks(stream_ollama(current_payload))
             async for json_obj in ndjson_iter:
+                if await self._is_client_disconnected(request):
+                    logger.info("Client disconnected; stopping chat tool rounds")
+                    return
+
                 extracted_calls = self._extract_tool_calls(json_obj)
                 for tool_call in extracted_calls:
                     pending_calls[tool_call.get("id") or len(pending_calls)] = tool_call
@@ -216,6 +238,10 @@ class ProxyService:
 
                 yield json.dumps(json_obj).encode() + b"\n"
 
+            if await self._is_client_disconnected(request):
+                logger.info("Client disconnected; stopping chat tool rounds")
+                return
+
             tool_calls = list(pending_calls.values())
             if not tool_calls:
                 # No tool calls required, streaming complete
@@ -227,6 +253,10 @@ class ProxyService:
             messages.append({"role": "assistant", "content": response_text, "tool_calls": tool_calls})
             messages = await self._handle_tool_calls(messages, tool_calls)
 
+            if await self._is_client_disconnected(request):
+                logger.info("Client disconnected; stopping chat tool rounds")
+                return
+
             # Check if we've reached the maximum number of rounds
             current_round += 1
             if max_rounds is not None and current_round >= max_rounds:
@@ -234,7 +264,7 @@ class ProxyService:
                     f"Reached maximum tool execution rounds ({max_rounds}), making final LLM call with tool results"
                 )
                 # Stream the final LLM response with tool results (no more tools allowed)
-                async for chunk in self._stream_final_llm_call(stream_ollama, payload, messages):
+                async for chunk in self._stream_final_llm_call(stream_ollama, payload, messages, request=request):
                     yield chunk
                 break
 

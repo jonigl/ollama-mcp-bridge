@@ -3,6 +3,7 @@ Unit tests that can run in GitHub Actions (no external services required)
 Run with: uv run pytest tests/test_unit.py -v
 """
 
+import inspect
 import json
 import os
 import subprocess
@@ -478,6 +479,177 @@ async def test_streaming_collects_parallel_tool_calls_streamed_in_separate_chunk
     finally:
         await service.cleanup()
         await manager.http_client.aclose()
+
+
+class _DisconnectAfterFirstCheck:
+    """Stand-in for FastAPI Request: connected for the first poll, then aborted."""
+
+    def __init__(self):
+        self.checks = 0
+
+    async def is_disconnected(self):
+        self.checks += 1
+        return self.checks > 1
+
+
+class _FakeOllamaStream:
+    """httpx-like streaming response that records how far the bridge read."""
+
+    def __init__(self, chunks):
+        self._chunks = chunks
+        self.chunks_yielded = 0
+        self.closed = False
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.closed = True
+        return False
+
+    async def aclose(self):
+        self.closed = True
+
+    async def aiter_bytes(self):
+        for chunk in self._chunks:
+            if self.closed:
+                break
+            self.chunks_yielded += 1
+            yield chunk
+
+
+@pytest.mark.anyio
+async def test_streaming_client_abort_closes_upstream_ollama_and_skips_tool_rounds(monkeypatch):
+    """Aborting the HTTP client must close the Ollama httpx stream and not run tool rounds.
+
+    On main the streaming generator never sees Request.is_disconnected(), so it
+    drains the upstream stream and continues into MCP tool execution.
+    """
+    from ollama_mcp_bridge import proxy_service
+    from ollama_mcp_bridge.mcp_manager import MCPManager
+
+    def _ndjson(obj):
+        return (json.dumps(obj) + "\n").encode()
+
+    round1 = [
+        _ndjson({"message": {"role": "assistant", "content": "thinking "}, "done": False}),
+        _ndjson({"message": {"role": "assistant", "content": "more "}, "done": False}),
+        _ndjson(
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{"function": {"name": "test_tool", "arguments": {}}}],
+                },
+                "done": False,
+            }
+        ),
+        _ndjson({"message": {"role": "assistant", "content": ""}, "done": True}),
+    ]
+    round2 = [
+        _ndjson({"message": {"role": "assistant", "content": "Final answer"}, "done": False}),
+        _ndjson({"message": {"role": "assistant", "content": ""}, "done": True}),
+    ]
+    rounds = [round1, round2]
+    streams = []
+    tools_called = []
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def stream(self, *args, **kwargs):
+            idx = len(streams)
+            chunks = rounds[idx] if idx < len(rounds) else round2
+            resp = _FakeOllamaStream(chunks)
+            streams.append(resp)
+            return resp
+
+        async def aclose(self):
+            return None
+
+    monkeypatch.setattr(proxy_service.httpx, "AsyncClient", FakeClient)
+
+    async def fake_call_tool(name, arguments):
+        tools_called.append(name)
+        return "tool result"
+
+    manager = MCPManager()
+    manager.all_tools = [{"type": "function", "function": {"name": "test_tool"}}]
+    manager.call_tool = fake_call_tool
+    service = proxy_service.ProxyService(manager)
+    try:
+        kwargs = {}
+        params = inspect.signature(service._proxy_with_tools_streaming).parameters
+        if "request" in params:
+            kwargs["request"] = _DisconnectAfterFirstCheck()
+
+        chunks = [
+            chunk
+            async for chunk in service._proxy_with_tools_streaming(
+                "/api/chat", {"messages": [{"role": "user", "content": "hi"}]}, **kwargs
+            )
+        ]
+
+        # Client is gone: do not drain Ollama, do not start a later model round, do not run tools.
+        assert streams, "expected an upstream Ollama stream to be opened"
+        assert all(s.closed for s in streams), "httpx stream must be closed on client abort"
+        assert streams[0].chunks_yielded < len(round1), "must stop reading Ollama after client abort"
+        assert len(streams) == 1, "must not start another Ollama round after client abort"
+        assert tools_called == [], "must not execute tool rounds after client abort"
+        assert not any(b"Final answer" in chunk for chunk in chunks)
+    finally:
+        await service.cleanup()
+        await manager.http_client.aclose()
+
+
+@pytest.mark.anyio
+async def test_chat_route_forwards_request_to_streaming_proxy(monkeypatch):
+    """POST /api/chat must pass the FastAPI Request through so streaming can see disconnects."""
+    from fastapi import Request
+    from ollama_mcp_bridge import api as api_mod
+
+    captured = {}
+
+    class DummyProxy:
+        async def proxy_chat_with_tools(self, body, stream=False, request=None):
+            captured["request"] = request
+            captured["stream"] = stream
+            captured["body"] = body
+            return {"ok": True}
+
+    monkeypatch.setattr(api_mod, "get_proxy_service", lambda: DummyProxy())
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "path": "/api/chat",
+        "raw_path": b"/api/chat",
+        "query_string": b"",
+        "headers": [],
+        "client": ("127.0.0.1", 123),
+        "server": ("test", 80),
+        "scheme": "http",
+    }
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    request = Request(scope, receive)
+    body = {"stream": True, "messages": [{"role": "user", "content": "hi"}]}
+    result = await api_mod.chat(request, body)
+
+    assert result == {"ok": True}
+    assert captured["request"] is request
+    assert captured["stream"] is True
+    assert captured["body"] == body
 
 
 def test_is_port_in_use():

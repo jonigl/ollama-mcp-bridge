@@ -40,14 +40,14 @@ async def health():
     summary="Generate a chat completion",
     description="Transparent proxy to Ollama's /api/chat with MCP tool injection.",
 )
-async def chat(body: Dict[str, Any] = Body(..., example=CHAT_EXAMPLE)):
+async def chat(request: Request, body: Dict[str, Any] = Body(..., example=CHAT_EXAMPLE)):
     """Transparent proxy for Ollama's /api/chat, with MCP tool injection."""
     proxy_service = get_proxy_service()
     if not proxy_service:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Services not initialized")
 
     try:
-        return await proxy_service.proxy_chat_with_tools(body, stream=body.get("stream", False))
+        return await proxy_service.proxy_chat_with_tools(body, stream=body.get("stream", False), request=request)
     except httpx.HTTPStatusError as e:
         logger.error(f"/api/chat failed: {e.response.text}")
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text) from e
