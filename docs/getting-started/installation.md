@@ -9,18 +9,20 @@
 
 ## Install
 
-=== "uvx (no install)"
+=== "uv tool"
 
-    Runs the latest published version without adding anything to your environment.
+    Installs it once as a standalone tool, on its own isolated environment, and
+    puts `ollama-mcp-bridge` on your PATH. The same command upgrades it later.
 
     ```bash
-    uvx ollama-mcp-bridge
+    uv tool install --upgrade ollama-mcp-bridge
     ```
 
-    !!! tip
+    Then run it:
 
-        With `uvx` you always invoke it as `uvx ollama-mcp-bridge`, not as a bare
-        `ollama-mcp-bridge`. Every example in these docs applies either way.
+    ```bash
+    ollama-mcp-bridge
+    ```
 
 === "pip"
 
@@ -62,6 +64,21 @@
     uv tool install --editable .
     ollama-mcp-bridge
     ```
+
+=== "uvx (no install)"
+
+    Runs the latest published version without adding anything to your environment.
+    It still expects an `mcp-config.json` in the directory you run it from —
+    see [Quick start](quickstart.md).
+
+    ```bash
+    uvx ollama-mcp-bridge
+    ```
+
+    !!! tip
+
+        With `uvx` you always invoke it as `uvx ollama-mcp-bridge`, not as a bare
+        `ollama-mcp-bridge`. Every example in these docs applies either way.
 
 ## Check the install
 

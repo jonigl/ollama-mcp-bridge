@@ -9,7 +9,14 @@ repo_url: https://github.com/jonigl/ollama-mcp-bridge
 repo_name: jonigl/ollama-mcp-bridge
 edit_uri: edit/main/docs/
 
-copyright: Made with &#10084;&#65039; by <a href="https://github.com/jonigl">jonigl</a> — MIT licensed
+# Both halves of the footer in one string. Material renders config.copyright
+# and its own "Made with" notice as two separate blocks, so the only way to
+# get a single line is to turn the generator notice off (extra.generator) and
+# carry the attribution here instead.
+copyright: >-
+  Made with &#10084;&#65039; by <a href="https://github.com/jonigl">jonigl</a> — MIT licensed
+  · Built with <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank"
+  rel="noopener">Material for MkDocs</a>
 
 # Personal working notes that live in docs/ but are not part of the site.
 exclude_docs: |
@@ -17,7 +24,7 @@ exclude_docs: |
 
 theme:
   name: material
-  custom_dir: overrides
+  custom_dir: docs-overrides
   favicon: assets/logo.png
   icon:
     repo: fontawesome/brands/github
@@ -60,6 +67,10 @@ theme:
 
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/hero-parallax.js
+  - javascripts/hero-copy.js
 
 markdown_extensions:
   - abbr
@@ -114,6 +125,8 @@ plugins:
             filters: ["!^_"]
 
 extra:
+  # The notice is folded into `copyright` above.
+  generator: false
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/jonigl/ollama-mcp-bridge
@@ -146,3 +159,4 @@ nav:
       - Contributing: development/contributing.md
       - Testing: development/testing.md
       - Code reference: development/reference.md
+      - Credits: development/credits.md

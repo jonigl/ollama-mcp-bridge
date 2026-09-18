@@ -75,10 +75,11 @@ tool results already folded in, streamed in real time.
 
 ## Get running in a minute
 
-=== "uvx"
+=== "uv tool"
 
     ```bash
-    uvx ollama-mcp-bridge
+    uv tool install --upgrade ollama-mcp-bridge
+    ollama-mcp-bridge
     ```
 
 === "pip"
@@ -98,6 +99,12 @@ tool results already folded in, streamed in real time.
       ghcr.io/jonigl/ollama-mcp-bridge:latest
     ```
 
+=== "uvx"
+
+    ```bash
+    uvx ollama-mcp-bridge
+    ```
+
 You'll need an [`mcp-config.json`](configuration/mcp-servers.md) with at least one server
 in it, and an Ollama server running.
 
@@ -111,10 +118,3 @@ in it, and an Ollama server running.
   management, human-in-the-loop, thinking mode and saved preferences.
 - [**simple-ollama-chat**](https://github.com/jonigl/simple-ollama-chat) — a small chat UI
   that works with the bridge, handy for exercising tool-augmented models quickly.
-
-## Credits
-
-Based on the basic MCP client from
-[Build an MCP Client in Minutes: Local AI Agents Just Got Real](https://medium.com/@jonigl/build-an-mcp-client-in-minutes-local-ai-agents-just-got-real-a10e186a560f).
-The idea came from [jonigl/mcp-client-for-ollama#22](https://github.com/jonigl/mcp-client-for-ollama/issues/22),
-suggested by [@nyomen](https://github.com/nyomen).

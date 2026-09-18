@@ -7,8 +7,99 @@
   --omb-ink-soft: #171a23;
   --omb-line: rgba(255, 255, 255, 0.09);
   --omb-text: rgba(255, 255, 255, 0.72);
-  --omb-accent: #8b9cff;
+  /* Pulled toward violet so the BRIDGE rows and the caret belong to the same
+     family as the hero glow rather than reading as a leftover blue. */
+  --omb-accent: #b49cff;
   --omb-accent-warm: #ffb86b;
+
+  /* ------------------------------------------------------------------
+     Hero palette — night.
+     The drawn scene paints every layer with currentColor, so the entire
+     mood of the illustration is these variables and the daylight block
+     below it. Nothing about the geometry changes between the two.
+     ------------------------------------------------------------------ */
+  --omb-hero-bg: #0a0a0f;
+  --omb-hero-sky: linear-gradient(to bottom, #07070c 0%, #120d22 56%, #1b1032 100%);
+  --omb-hero-fg: rgba(255, 255, 255, 0.72);
+  --omb-hero-head: #fff;
+  --omb-hero-muted: rgba(255, 255, 255, 0.5);
+  --omb-hero-eyebrow: var(--omb-accent);
+  --omb-hero-code-bg: rgba(255, 255, 255, 0.08);
+  --omb-hero-code-fg: rgba(255, 255, 255, 0.85);
+  --omb-hero-btn-bg: #fff;
+  --omb-hero-btn-ink: var(--omb-ink);
+  --omb-hero-btn-line: rgba(255, 255, 255, 0.35);
+  --omb-hero-btn-hover-bg: var(--omb-accent);
+  --omb-hero-btn-hover-ink: var(--omb-ink);
+  --omb-scrim: 10, 10, 15;
+  --omb-scrim-near: 0.94;
+  --omb-scrim-mid: 0.72;
+  --omb-scrim-far: 0.28;
+
+  --omb-glow-a: rgba(140, 70, 230, 0.34);
+  --omb-glow-b: rgba(230, 60, 140, 0.18);
+
+  /* Scene layers, far to near. */
+  --omb-sky: #fff;
+  --omb-sky-opacity: 1;
+  --omb-celestial: rgba(240, 243, 255, 0.92);
+  --omb-cloud: #b298f2;
+  --omb-cloud-opacity: 0.14;
+  --omb-hill-far: #7854be;
+  --omb-hill-far-opacity: 0.3;
+  --omb-hill-mid: #4e3686;
+  --omb-hill-mid-opacity: 0.5;
+  --omb-water: #7e64ce;
+  --omb-water-opacity: 0.3;
+  --omb-bridge: #e2d6ff;
+  --omb-bridge-opacity: 0.58;
+  --omb-shore: #08070e;
+  --omb-shore-opacity: 0.94;
+}
+
+/* ------------------------------------------------------------------
+   Hero palette — day.
+   Scoped to the hero so the rest of the light theme is untouched. The
+   bridge goes International Orange, because at that point the drawing
+   is finally allowed to look like what it is quoting.
+   ------------------------------------------------------------------ */
+[data-md-color-scheme="default"] .omb-hero {
+  --omb-hero-bg: #cfe3f2;
+  --omb-hero-sky: linear-gradient(to bottom, #8dc2e8 0%, #c6e1f3 46%, #f4e7d5 100%);
+  --omb-hero-fg: rgba(16, 20, 30, 0.74);
+  --omb-hero-head: #0d1017;
+  --omb-hero-muted: rgba(16, 20, 30, 0.58);
+  --omb-hero-eyebrow: #6234c9;
+  --omb-hero-code-bg: rgba(13, 16, 23, 0.08);
+  --omb-hero-code-fg: rgba(13, 16, 23, 0.86);
+  --omb-hero-btn-bg: #14171f;
+  --omb-hero-btn-ink: #fff;
+  --omb-hero-btn-line: rgba(13, 16, 23, 0.3);
+  --omb-hero-btn-hover-bg: #6234c9;
+  --omb-hero-btn-hover-ink: #fff;
+  --omb-scrim: 228, 238, 248;
+  --omb-scrim-near: 0.88;
+  --omb-scrim-mid: 0.58;
+  --omb-scrim-far: 0.18;
+
+  --omb-glow-a: rgba(255, 212, 146, 0.55);
+  --omb-glow-b: rgba(116, 186, 240, 0.38);
+
+  --omb-sky: #3c587c;
+  --omb-sky-opacity: 1;
+  --omb-celestial: #ffd27a;
+  --omb-cloud: #fff;
+  --omb-cloud-opacity: 0.88;
+  --omb-hill-far: #7e9ebe;
+  --omb-hill-far-opacity: 0.55;
+  --omb-hill-mid: #5c847e;
+  --omb-hill-mid-opacity: 0.72;
+  --omb-water: #3876ae;
+  --omb-water-opacity: 0.6;
+  --omb-bridge: #ba3c20;
+  --omb-bridge-opacity: 0.82;
+  --omb-shore: #20342a;
+  --omb-shore-opacity: 0.92;
 }
 
 /* Material always renders something in the logo slot — a theme icon when no
@@ -83,27 +174,154 @@ body:has(.omb-hero) .md-content__inner > h2:first-of-type {
 
 .omb-hero {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
-  color: var(--omb-text);
-  background-color: var(--omb-ink);
-  /* A soft off-centre glow over a fine dot grid — no imagery required. */
-  background-image:
-    radial-gradient(
-      ellipse 70% 60% at 22% 0%,
-      rgba(99, 122, 255, 0.28),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 50% 50% at 88% 30%,
-      rgba(255, 150, 80, 0.12),
-      transparent 70%
-    ),
-    radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.07) 1px,
-      transparent 1px
+  color: var(--omb-hero-fg);
+  background-color: var(--omb-hero-bg);
+  background-image: var(--omb-hero-sky);
+}
+
+/* --------------------------------------------------------------------------
+   Parallax background
+   Each layer is transformed independently, so they are separate elements
+   be transformed independently. They are oversized vertically so the drift
+   never exposes an edge, and they sit behind the content via z-index on an
+   isolated stacking context.
+   -------------------------------------------------------------------------- */
+
+.omb-hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.omb-hero__layer {
+  position: absolute;
+  top: -25%;
+  right: 0;
+  left: 0;
+  height: 150%;
+  will-change: transform;
+}
+
+.omb-hero__layer--glow-a {
+  background-image: radial-gradient(
+    ellipse 70% 55% at 20% 18%,
+    var(--omb-glow-a),
+    transparent 70%
+  );
+}
+
+.omb-hero__layer--glow-b {
+  background-image: radial-gradient(
+    ellipse 55% 50% at 85% 42%,
+    var(--omb-glow-b),
+    transparent 70%
+  );
+}
+
+/* --------------------------------------------------------------------------
+   The drawn scene
+   Line-art bridge over layered hills, echoing the project's own mark. Unlike
+   the soft glows, these have hard edges — which is what makes the parallax
+   readable at all. Each layer is anchored to the bottom of the hero and drifts
+   down as the page scrolls, so nearer layers (lower rate) travel further
+   across the screen than distant ones.
+   -------------------------------------------------------------------------- */
+
+.omb-scene {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  line-height: 0;
+  will-change: transform;
+}
+
+.omb-scene svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.omb-scene--sky,
+.omb-scene--clouds {
+  top: 0;
+  bottom: auto;
+}
+
+.omb-scene--sky {
+  color: var(--omb-sky);
+  opacity: var(--omb-sky-opacity);
+}
+
+/* The alpha goes on the layer, never on the colour. These shapes overlap each
+   other on purpose — a cloud *is* stacked lozenges, the bridge crosses its own
+   truss — and per-shape transparency makes every seam show through as a
+   brighter patch. Compositing the layer once flattens each drawing into a
+   single silhouette first. */
+.omb-scene--clouds {
+  color: var(--omb-cloud);
+  opacity: var(--omb-cloud-opacity);
+}
+
+.omb-scene--hills-far {
+  color: var(--omb-hill-far);
+  opacity: var(--omb-hill-far-opacity);
+}
+
+.omb-scene--hills-mid {
+  color: var(--omb-hill-mid);
+  opacity: var(--omb-hill-mid-opacity);
+}
+
+.omb-scene--water {
+  color: var(--omb-water);
+  opacity: var(--omb-water-opacity);
+}
+
+.omb-scene--bridge {
+  color: var(--omb-bridge);
+  opacity: var(--omb-bridge-opacity);
+}
+
+.omb-scene--shore {
+  color: var(--omb-shore);
+  opacity: var(--omb-shore-opacity);
+}
+
+.omb-scene__sun,
+.omb-scene__moon {
+  color: var(--omb-celestial);
+}
+
+/* One drawing, two times of day: the sky layer carries both casts and CSS
+   picks the one that matches the palette. */
+.omb-scene__day {
+  display: none;
+}
+
+[data-md-color-scheme="default"] .omb-scene__night {
+  display: none;
+}
+
+[data-md-color-scheme="default"] .omb-scene__day {
+  display: block;
+}
+
+.omb-hero__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(var(--omb-scrim), var(--omb-scrim-near)) 0%,
+      rgba(var(--omb-scrim), var(--omb-scrim-mid)) 34%,
+      rgba(var(--omb-scrim), var(--omb-scrim-far)) 58%,
+      rgba(var(--omb-scrim), 0) 78%
     );
-  background-size: auto, auto, 22px 22px;
 }
 
 /* Fade the hero into the page background instead of cutting it off. */
@@ -137,7 +355,7 @@ body:has(.omb-hero) .md-content__inner > h2:first-of-type {
   margin: 0 0 1rem;
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--omb-accent);
+  color: var(--omb-hero-eyebrow);
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
@@ -147,7 +365,7 @@ body:has(.omb-hero) .md-content__inner > h2:first-of-type {
   font-size: 2.1rem;
   font-weight: 700;
   line-height: 1.15;
-  color: #fff;
+  color: var(--omb-hero-head);
   letter-spacing: -0.02em;
 }
 
@@ -172,39 +390,95 @@ body:has(.omb-hero) .md-content__inner > h2:first-of-type {
 
 .omb-hero .md-button {
   margin: 0;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--omb-hero-head);
+  border-color: var(--omb-hero-btn-line);
 }
 
 .omb-hero .md-button:is(:focus, :hover) {
-  color: var(--omb-ink);
-  background-color: #fff;
-  border-color: #fff;
+  color: var(--omb-hero-btn-ink);
+  background-color: var(--omb-hero-btn-bg);
+  border-color: var(--omb-hero-btn-bg);
 }
 
 .omb-hero .md-button--primary {
-  color: var(--omb-ink);
-  background-color: #fff;
-  border-color: #fff;
+  color: var(--omb-hero-btn-ink);
+  background-color: var(--omb-hero-btn-bg);
+  border-color: var(--omb-hero-btn-bg);
 }
 
 .omb-hero .md-button--primary:is(:focus, :hover) {
-  color: var(--omb-ink);
-  background-color: var(--omb-accent);
-  border-color: var(--omb-accent);
+  color: var(--omb-hero-btn-hover-ink);
+  background-color: var(--omb-hero-btn-hover-bg);
+  border-color: var(--omb-hero-btn-hover-bg);
 }
 
 .omb-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.7rem;
+  align-items: center;
   margin: 2rem 0 0;
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--omb-hero-fg);
+}
+
+/* The install command, with its own copy button: Material's copy affordance
+   only reaches fenced code blocks it has highlighted, and this is a bare
+   <code> in the hero template. */
+.omb-cmd {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  background-color: var(--omb-hero-code-bg);
+  border: 1px solid var(--omb-hero-btn-line);
+  border-radius: 0.3rem;
+}
+
+.omb-copy {
+  display: grid;
+  place-items: center;
+  padding: 0 0.5rem;
+  color: var(--omb-hero-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--omb-hero-btn-line);
+  transition: color 125ms, background-color 125ms;
+}
+
+.omb-copy:is(:hover, :focus-visible) {
+  color: var(--omb-hero-head);
+  background-color: var(--omb-hero-code-bg);
+}
+
+.omb-copy svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: currentcolor;
+}
+
+.omb-copy__done,
+.omb-copy--done .omb-copy__copy {
+  display: none;
+}
+
+.omb-copy--done {
+  color: #4ec9a0;
+}
+
+.omb-copy--done .omb-copy__done {
+  display: block;
 }
 
 .omb-hero__meta code {
-  padding: 0.15em 0.45em;
-  color: rgba(255, 255, 255, 0.85);
-  background-color: rgba(255, 255, 255, 0.08);
-  border-radius: 0.2rem;
+  padding: 0.3em 0.6em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--omb-hero-code-fg);
+  background: none;
+  border: none;
+  border-radius: 0;
 }
 
 /* --------------------------------------------------------------------------
