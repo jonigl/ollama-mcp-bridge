@@ -1,0 +1,119 @@
+{% extends "main.html" %}
+
+{% block tabs %}
+  {{ super() }}
+
+  <section class="omb-hero">
+    <div class="omb-hero__grid md-grid md-typeset">
+
+      <div class="omb-hero__content">
+        <img
+          class="omb-hero__mark"
+          src="{{ 'assets/logo-circle.png' | url }}"
+          alt="Ollama MCP Bridge"
+          width="1024"
+          height="1024"
+          draggable="false"
+        >
+        <p class="omb-hero__eyebrow">MCP × Ollama</p>
+        <h1>Your Ollama clients just learned to use tools.</h1>
+        <p class="omb-hero__lede">
+          {{ config.site_description }}
+          Point any Ollama SDK at the bridge — the tool-calling loop runs
+          server-side and the answer streams straight back.
+        </p>
+
+        <div class="omb-hero__actions">
+          <a href="{{ 'getting-started/quickstart/' | url }}" class="md-button md-button--primary">
+            Quick start
+          </a>
+          <a href="{{ 'guide/how-it-works/' | url }}" class="md-button">
+            How it works
+          </a>
+        </div>
+
+        <p class="omb-hero__meta">
+          <code>uvx ollama-mcp-bridge</code> · Python 3.10+ · MIT
+        </p>
+      </div>
+
+      <div class="omb-hero__demo">
+        <div class="omb-window">
+          <div class="omb-window__bar">
+            <span class="omb-window__name">client.py</span>
+            <span class="omb-window__note">the only change is the host</span>
+          </div>
+<pre class="omb-window__code"><code><span class="c">from</span> ollama <span class="c">import</span> Client
+
+<span class="d"># the bridge, not Ollama — that is the whole change</span>
+client = Client(host=<span class="s">"http://localhost:8000"</span>)
+
+<span class="c">for</span> chunk <span class="c">in</span> client.chat(
+    model=<span class="s">"qwen3"</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Weather in Paris?"</span>}],
+    stream=<span class="c">True</span>,
+):
+    print(chunk[<span class="s">"message"</span>][<span class="s">"content"</span>], end=<span class="s">""</span>)</code></pre>
+
+          <div class="omb-window__out">
+            <p class="omb-window__out-label">inside that one call</p>
+            <div class="omb-trace">
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--you">you</span>
+                <span class="omb-trace__what">Weather in Paris?</span>
+              </div>
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--bridge">bridge</span>
+                <span class="omb-trace__what">
+                  forwards it to Ollama <em>with every MCP tool attached</em>
+                </span>
+              </div>
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--model">ollama</span>
+                <span class="omb-trace__what">
+                  asks for <code>weather.get_current_temperature</code>
+                </span>
+              </div>
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--bridge">bridge</span>
+                <span class="omb-trace__what">
+                  runs it on your MCP server, feeds the result back
+                  <span class="omb-trace__val">12°C, light rain</span>
+                </span>
+              </div>
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--model">ollama</span>
+                <span class="omb-trace__what">
+                  asks for <code>weather.get_forecast</code> — round 2
+                </span>
+              </div>
+
+              <div class="omb-trace__row">
+                <span class="omb-trace__who omb-trace__who--bridge">bridge</span>
+                <span class="omb-trace__what">
+                  runs it, loops again
+                  <span class="omb-trace__val">tomorrow 15°C, sunny</span>
+                </span>
+              </div>
+
+              <div class="omb-trace__row omb-trace__row--answer">
+                <span class="omb-trace__who omb-trace__who--answer">answer</span>
+                <span class="omb-trace__what">
+                  It's 12°C in Paris right now with light rain. Tomorrow looks
+                  better — 15°C and sunny.<span class="caret"></span>
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+{% endblock %}

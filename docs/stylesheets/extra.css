@@ -1,0 +1,443 @@
+/* --------------------------------------------------------------------------
+   Ollama MCP Bridge — site styles
+   -------------------------------------------------------------------------- */
+
+:root {
+  --omb-ink: #0f1117;
+  --omb-ink-soft: #171a23;
+  --omb-line: rgba(255, 255, 255, 0.09);
+  --omb-text: rgba(255, 255, 255, 0.72);
+  --omb-accent: #8b9cff;
+  --omb-accent-warm: #ffb86b;
+}
+
+/* Material always renders something in the logo slot — a theme icon when no
+   logo is configured. The project mark lives in the hero instead, so the slot
+   is removed here, in the header and in the mobile drawer alike. */
+.md-header__button.md-logo,
+.md-nav__button.md-logo {
+  display: none;
+}
+
+/* The disc is baked into the asset itself (docs/assets/logo-circle.png, built
+   from misc/ollama-mcp-bridge-logo-512.png with a transparent circular alpha).
+   Doing it in the image rather than in CSS avoids the trap that a border-radius
+   on an <img> makes the browser clip the artwork to a circle inscribed in its
+   content box, which shears a square logo and cuts into the wordmark. */
+.omb-hero__mark {
+  width: 6rem;
+  height: auto;
+  margin-bottom: 1.4rem;
+  filter: drop-shadow(0 0.5rem 1.4rem rgba(0, 0, 0, 0.4));
+}
+
+@media screen and (min-width: 60em) {
+  .omb-hero__mark {
+    width: 7rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Landing page layout
+   Scoped to the page that actually renders the hero, so the rest of the
+   site keeps its normal navigation and table of contents.
+   -------------------------------------------------------------------------- */
+
+/* Only the top spacing goes — zeroing the shorthand would also kill the
+   auto side margins that centre the content under the hero. */
+body:has(.omb-hero) .md-main__inner {
+  margin-top: 0;
+}
+
+@media screen and (min-width: 60em) {
+  body:has(.omb-hero) .md-sidebar--secondary {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 76.25em) {
+  body:has(.omb-hero) .md-sidebar--primary {
+    display: none;
+  }
+}
+
+/* The hero already carries the page heading, so drop the one Material
+   injects from the nav title, along with the edit affordance. */
+body:has(.omb-hero) .md-content__inner > h1,
+body:has(.omb-hero) .md-content__button {
+  display: none;
+}
+
+/* Close the gap the hidden heading leaves behind. */
+body:has(.omb-hero) .md-content__inner {
+  padding-top: 0;
+}
+
+body:has(.omb-hero) .md-content__inner > h2:first-of-type {
+  margin-top: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Hero
+   -------------------------------------------------------------------------- */
+
+.omb-hero {
+  position: relative;
+  overflow: hidden;
+  color: var(--omb-text);
+  background-color: var(--omb-ink);
+  /* A soft off-centre glow over a fine dot grid — no imagery required. */
+  background-image:
+    radial-gradient(
+      ellipse 70% 60% at 22% 0%,
+      rgba(99, 122, 255, 0.28),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 50% at 88% 30%,
+      rgba(255, 150, 80, 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.07) 1px,
+      transparent 1px
+    );
+  background-size: auto, auto, 22px 22px;
+}
+
+/* Fade the hero into the page background instead of cutting it off. */
+.omb-hero::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4rem;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(to bottom, transparent, var(--md-default-bg-color));
+}
+
+.omb-hero__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: stretch;
+  padding: 2.5rem 0.8rem 3.5rem;
+}
+
+@media screen and (min-width: 60em) {
+  .omb-hero__grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
+    padding: 3rem 0.8rem 4.5rem;
+  }
+}
+
+.omb-hero__eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--omb-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.omb-hero h1 {
+  margin: 0 0 1.1rem;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+@media screen and (min-width: 60em) {
+  .omb-hero h1 {
+    font-size: 2.7rem;
+  }
+}
+
+.omb-hero__lede {
+  max-width: 34rem;
+  margin: 0 0 2rem;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.omb-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.omb-hero .md-button {
+  margin: 0;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.omb-hero .md-button:is(:focus, :hover) {
+  color: var(--omb-ink);
+  background-color: #fff;
+  border-color: #fff;
+}
+
+.omb-hero .md-button--primary {
+  color: var(--omb-ink);
+  background-color: #fff;
+  border-color: #fff;
+}
+
+.omb-hero .md-button--primary:is(:focus, :hover) {
+  color: var(--omb-ink);
+  background-color: var(--omb-accent);
+  border-color: var(--omb-accent);
+}
+
+.omb-hero__meta {
+  margin: 2rem 0 0;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.omb-hero__meta code {
+  padding: 0.15em 0.45em;
+  color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 0.2rem;
+}
+
+/* --------------------------------------------------------------------------
+   The demo panel in the hero
+   One window, stretched to the full height of the text column. The response
+   region is pinned to the bottom with margin-top:auto, so whatever height the
+   text column dictates is absorbed *inside* the panel rather than leaving a
+   gap around a short card.
+   -------------------------------------------------------------------------- */
+
+.omb-hero__demo {
+  display: flex;
+  min-width: 0;
+}
+
+.omb-window {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--omb-ink-soft);
+  border: 1px solid var(--omb-line);
+  border-radius: 0.6rem;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+.omb-window__bar {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--omb-line);
+}
+
+.omb-window__name {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.omb-window__note {
+  margin-left: auto;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* The hero carries .md-typeset so the buttons pick up Material's styling;
+   that also themes <pre>, which would nest a second box inside the card. */
+.md-typeset .omb-window pre,
+.omb-window pre {
+  padding: 0.95rem 1.1rem 1.05rem;
+  margin: 0;
+  overflow-x: auto;
+  font-size: 0.64rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.md-typeset .omb-window pre > code {
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  word-break: normal;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* The response, held against the bottom edge of the panel. */
+.omb-window__out {
+  margin-top: auto;
+  background-color: rgba(0, 0, 0, 0.28);
+  border-top: 1px solid var(--omb-line);
+}
+
+.omb-window__out-label {
+  padding: 0.7rem 1.1rem 0;
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* --------------------------------------------------------------------------
+   The request trace
+   Every row names who acted. Without that, a reader sees tool calls and an
+   answer but never learns that the bridge is what put the tools in front of
+   the model and ran the loop — which is the whole point of the project.
+   -------------------------------------------------------------------------- */
+
+.omb-trace {
+  padding: 0.7rem 1.1rem 1rem;
+  font-size: 0.64rem;
+  line-height: 1.55;
+}
+
+.omb-trace__row {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: 0.7rem;
+  padding: 0.28rem 0;
+}
+
+.omb-trace__who {
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.9;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.omb-trace__who--you {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.omb-trace__who--model {
+  color: var(--omb-accent-warm);
+}
+
+/* The bridge's own rows are the ones worth noticing. */
+.omb-trace__who--bridge {
+  color: var(--omb-accent);
+}
+
+.omb-trace__what {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.omb-trace__what em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.md-typeset .omb-trace__what code {
+  padding: 0.05em 0.35em;
+  font-size: 0.92em;
+  color: #7ee2b8;
+  background-color: rgba(126, 226, 184, 0.1);
+  border-radius: 0.2rem;
+  box-shadow: none;
+}
+
+.omb-trace__val {
+  display: inline-block;
+  padding: 0.05em 0.4em;
+  margin-left: 0.15em;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.92em;
+  color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 0.2rem;
+}
+
+/* The closing row is what comes back *to* the caller, so it is labelled for
+   the result rather than for an actor — tagging it "you" read as if the user
+   had said it. */
+.omb-trace__who--answer {
+  color: #7ee2b8;
+}
+
+/* The model's final answer is the payoff — give it full contrast. */
+.omb-trace__row--answer {
+  padding-top: 0.6rem;
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--omb-line);
+}
+
+.omb-trace__row--answer .omb-trace__what {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* A blinking caret, to read as a live stream rather than a static paste. */
+.caret {
+  display: inline-block;
+  width: 0.45em;
+  height: 1em;
+  margin-left: 0.15em;
+  vertical-align: text-bottom;
+  background-color: var(--omb-accent);
+  animation: omb-blink 1.1s step-end infinite;
+}
+
+@keyframes omb-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}
+
+.omb-window .c {
+  color: var(--omb-accent);
+}
+
+.omb-window .s {
+  color: var(--omb-accent-warm);
+}
+
+.omb-window .d {
+  color: rgba(255, 255, 255, 0.38);
+  font-style: italic;
+}
+
+/* The resolved tool call. */
+.omb-window .t {
+  font-weight: 600;
+  color: #7ee2b8;
+}
+
+/* --------------------------------------------------------------------------
+   Content tweaks
+   -------------------------------------------------------------------------- */
+
+/* Give the feature grid a little more presence than the default cards. */
+.md-typeset .grid.cards > :is(ul, ol) > li,
+.md-typeset .grid > .card {
+  border-radius: 0.4rem;
+  transition: border-color 125ms, box-shadow 125ms;
+}
+
+.md-typeset .grid.cards > :is(ul, ol) > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.1);
+}

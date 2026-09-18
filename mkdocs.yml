@@ -1,0 +1,148 @@
+site_name: Ollama MCP Bridge
+site_description: >-
+  An API layer in front of Ollama that transparently adds tools from
+  multiple MCP servers to every chat request.
+site_url: https://jonigl.github.io/ollama-mcp-bridge/
+site_author: Jonathan Gastón Löwenstern
+
+repo_url: https://github.com/jonigl/ollama-mcp-bridge
+repo_name: jonigl/ollama-mcp-bridge
+edit_uri: edit/main/docs/
+
+copyright: Made with &#10084;&#65039; by <a href="https://github.com/jonigl">jonigl</a> — MIT licensed
+
+# Personal working notes that live in docs/ but are not part of the site.
+exclude_docs: |
+  client-tools-passthrough.md
+
+theme:
+  name: material
+  custom_dir: overrides
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - announce.dismiss
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_heading: true
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            docstring_style: google
+            members_order: source
+            filters: ["!^_"]
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jonigl/ollama-mcp-bridge
+      name: Source on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/ollama-mcp-bridge/
+      name: Package on PyPI
+    - icon: fontawesome/brands/docker
+      link: https://github.com/jonigl/ollama-mcp-bridge/pkgs/container/ollama-mcp-bridge
+      name: Image on GHCR
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quick start: getting-started/quickstart.md
+      - Docker: getting-started/docker.md
+  - Configuration:
+      - MCP servers: configuration/mcp-servers.md
+      - Tool filtering: configuration/tool-filtering.md
+      - Variable expansion: configuration/variable-expansion.md
+      - CLI options: configuration/cli.md
+      - Environment variables: configuration/environment.md
+      - CORS: configuration/cors.md
+  - Guide:
+      - How it works: guide/how-it-works.md
+      - API reference: guide/api.md
+      - Architecture: guide/architecture.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Code reference: development/reference.md
