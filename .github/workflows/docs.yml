@@ -6,6 +6,7 @@ on:
     paths:
       - "docs/**"
       - "docs-overrides/**"
+      - "scripts/**"
       - "mkdocs.yml"
       - "src/**"
       - "pyproject.toml"
@@ -14,6 +15,7 @@ on:
     paths:
       - "docs/**"
       - "docs-overrides/**"
+      - "scripts/**"
       - "mkdocs.yml"
       - "src/**"
       - "pyproject.toml"
@@ -44,6 +46,18 @@ jobs:
 
       - name: Set up Python
         run: uv python install 3.12
+
+      # The hero scene is generated but committed, so the script and its output
+      # can drift: the build publishes the committed SVG and would never notice.
+      # Regenerating here turns that drift into a failing check.
+      - name: Check the generated hero scene is current
+        run: |
+          python3 scripts/build_hero_scene.py
+          if ! git diff --exit-code -- docs-overrides/partials/hero-scene.html; then
+            echo "::error file=docs-overrides/partials/hero-scene.html::\
+          Out of date. Run 'python3 scripts/build_hero_scene.py' and commit the result."
+            exit 1
+          fi
 
       - name: Build the site
         run: uv run --group docs mkdocs build --strict
