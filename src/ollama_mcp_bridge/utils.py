@@ -1,5 +1,6 @@
 """Utility functions for ollama-mcp-bridge"""
 
+import asyncio
 import os
 import json
 import re
@@ -167,6 +168,46 @@ async def iter_ndjson_chunks(chunk_iterator):
             yield json.loads(buffer)
         except json.JSONDecodeError as e:
             logger.debug(f"Error parsing trailing NDJSON: {e}")
+
+
+class ClientDisconnected(Exception):
+    """Raised when the client went away before the upstream work finished."""
+
+
+async def _wait_for_disconnect(request, poll_interval: float) -> None:
+    """Poll until the client goes away."""
+    while not await request.is_disconnected():
+        await asyncio.sleep(poll_interval)
+
+
+async def run_until_client_disconnects(coro, request, poll_interval: float = 0.25):
+    """Run ``coro``, cancelling it if the client disconnects first.
+
+    Nothing cancels a buffered handler when the client hangs up, so the bridge would keep
+    driving Ollama for a client that left. Cancelling closes the connection to Ollama,
+    which stops the generation there too.
+
+    The watcher reads from the ASGI receive channel, so the request body must already have
+    been consumed or a body message could be swallowed.
+
+    Returns the result of ``coro``, or raises ``ClientDisconnected``.
+    """
+    task = asyncio.ensure_future(coro)
+    watcher = asyncio.ensure_future(_wait_for_disconnect(request, poll_interval))
+    try:
+        done, _ = await asyncio.wait({task, watcher}, return_when=asyncio.FIRST_COMPLETED)
+        if task in done:
+            return task.result()
+        watcher.result()  # a watcher that failed must not be read as a disconnect
+        raise ClientDisconnected()
+    finally:
+        # Only the work is awaited: cancelling it is what closes the upstream connection.
+        # Awaiting the watcher could hang, since anyio 3 (which starlette still allows)
+        # swallows the cancel inside is_disconnected().
+        watcher.cancel()
+        if not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
 
 def parse_upstream_headers(env_value: Optional[str], header_flags: Optional[list] = None) -> Optional[Dict[str, str]]:
