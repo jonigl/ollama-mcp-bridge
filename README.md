@@ -15,6 +15,10 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+> **📖 Full documentation: <https://jonigl.github.io/ollama-mcp-bridge/>**
+>
+> Installation, configuration reference, architecture notes and a code reference, all searchable.
+
 ## Table of Contents
 
 - [Features](#features)

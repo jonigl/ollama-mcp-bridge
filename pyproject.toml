@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/jonigl/ollama-mcp-bridge#readme"
+Documentation = "https://jonigl.github.io/ollama-mcp-bridge/"
 Issues = "https://github.com/jonigl/ollama-mcp-bridge/issues"
 Source = "https://github.com/jonigl/ollama-mcp-bridge"
 
@@ -45,6 +45,10 @@ dev = [
     "pytest>=8.4.1",
     "requests>=2.32.4",
     "black>=24.0.0",
+]
+docs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.26.0",
 ]
 
 [tool.black]
