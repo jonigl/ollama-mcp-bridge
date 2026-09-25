@@ -1,3 +1,8 @@
+---
+title: "Contributing"
+description: "Set up a development environment for Ollama MCP Bridge with uv, follow the code style and Conventional Commits, and open a pull request."
+---
+
 # Contributing
 
 Contributions are welcome. `CONTRIBUTING.md` in the repository root is the authoritative

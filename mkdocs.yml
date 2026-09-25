@@ -25,7 +25,7 @@ exclude_docs: |
 theme:
   name: material
   custom_dir: docs-overrides
-  favicon: assets/logo.png
+  favicon: assets/favicon.png
   icon:
     repo: fontawesome/brands/github
   palette:
@@ -112,6 +112,19 @@ markdown_extensions:
 
 plugins:
   - search
+  # Open Graph / Twitter tags plus a 1200x630 preview card per page. Needs the
+  # Cairo system library, so it only runs where CI is set (GitHub Actions sets
+  # it); run `CI=true mkdocs build` to render the cards locally.
+  - social:
+      enabled: !ENV [CI, false]
+      cards_layout_options:
+        logo: misc/ollama-mcp-bridge-logo-circle.png
+  # Real per-page modification dates, from git. The sitemap override in
+  # docs-overrides/ uses them for <lastmod>, which would otherwise be the build
+  # date for every page. Needs full history (the workflow fetches it).
+  - git-revision-date-localized:
+      type: date
+      fallback_to_build_date: true
   - mkdocstrings:
       handlers:
         python:
@@ -128,6 +141,11 @@ plugins:
 extra:
   # The notice is folded into `copyright` above.
   generator: false
+  # Search engine ownership tokens, rendered as <meta> tags by
+  # docs-overrides/main.html when set. Paste the content="" value only.
+  site_verification:
+    google: ""
+    bing: ""
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/jonigl/ollama-mcp-bridge

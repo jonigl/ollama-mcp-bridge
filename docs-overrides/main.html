@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{#- Head additions for search engines. Open Graph and Twitter tags are not
+    here: the social plugin writes them, together with the preview card. -#}
+{% block extrahead %}
+  {{ super() }}
+
+  <link rel="apple-touch-icon" href="{{ 'assets/apple-touch-icon.png' | url }}">
+
+  {%- set verify = config.extra.site_verification or {} %}
+  {%- if verify.google %}
+  <meta name="google-site-verification" content="{{ verify.google }}">
+  {%- endif %}
+  {%- if verify.bing %}
+  <meta name="msvalidate.01" content="{{ verify.bing }}">
+  {%- endif %}
+
+  {#- Structured data. Every page gets the WebSite node; the home page
+      describes the software itself, and every other page is a TechArticle
+      with breadcrumbs. Sections have no page of their own, so a crumb for a
+      section points at its first page. The 404 template has no page. -#}
+  {%- if page %}
+  {%- set site = {
+    "@type": "WebSite",
+    "@id": config.site_url ~ "#website",
+    "name": config.site_name,
+    "url": config.site_url,
+    "description": config.site_description,
+    "inLanguage": "en",
+  } %}
+  {%- set author = {
+    "@type": "Person",
+    "name": config.site_author,
+    "url": "https://github.com/jonigl",
+  } %}
+  {%- set title = page.meta.title or page.title %}
+  {%- set description = page.meta.description or config.site_description %}
+  {%- set graph = [site] %}
+
+  {%- if page.is_homepage %}
+    {%- set _ = graph.append({
+      "@type": "SoftwareApplication",
+      "name": config.site_name,
+      "description": description,
+      "url": config.site_url,
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, macOS, Windows",
+      "softwareRequirements": "Python 3.10+, Ollama",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "author": author,
+      "downloadUrl": "https://pypi.org/project/ollama-mcp-bridge/",
+      "codeRepository": config.repo_url,
+      "sameAs": [config.repo_url] + (config.extra.social | map(attribute="link") | reject("equalto", config.repo_url) | list),
+    }) %}
+  {%- else %}
+    {%- set crumbs = [{"@type": "ListItem", "position": 1, "name": "Home", "item": config.site_url}] %}
+    {%- for section in page.ancestors | reverse %}
+      {%- set first = section.children | selectattr("url", "defined") | first %}
+      {%- if first %}
+        {%- set _ = crumbs.append({
+          "@type": "ListItem",
+          "position": crumbs | length + 1,
+          "name": section.title,
+          "item": config.site_url ~ first.url,
+        }) %}
+      {%- endif %}
+    {%- endfor %}
+    {%- set _ = crumbs.append({"@type": "ListItem", "position": crumbs | length + 1, "name": title}) %}
+    {%- set article = {
+      "@type": "TechArticle",
+      "headline": title,
+      "description": description,
+      "url": page.canonical_url,
+      "inLanguage": "en",
+      "author": author,
+      "isPartOf": {"@id": site["@id"]},
+      "about": {"@type": "SoftwareApplication", "name": config.site_name, "url": config.site_url},
+    } %}
+    {%- if page.meta.git_revision_date_localized_raw_iso_date %}
+      {%- set _ = article.update({"dateModified": page.meta.git_revision_date_localized_raw_iso_date}) %}
+    {%- endif %}
+    {%- set _ = graph.append(article) %}
+    {%- set _ = graph.append({"@type": "BreadcrumbList", "itemListElement": crumbs}) %}
+  {%- endif %}
+  <script type="application/ld+json">{{ {"@context": "https://schema.org", "@graph": graph} | tojson }}</script>
+  {%- endif %}
+{% endblock %}

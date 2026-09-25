@@ -1,3 +1,8 @@
+---
+title: "How MCP tool calling works with Ollama"
+description: "How the bridge connects MCP servers, injects their tools into Ollama chat requests and runs the multi-round tool-calling loop server-side while streaming."
+---
+
 # How it works
 
 ## Startup

@@ -1,3 +1,8 @@
+---
+title: "Ollama-compatible API reference"
+description: "Ollama MCP Bridge endpoints: /api/chat with MCP tools, /health, /version, and every other Ollama API path proxied unchanged as a drop-in replacement."
+---
+
 # API reference
 
 The bridge listens on `http://localhost:8000` by default and mirrors the Ollama API.

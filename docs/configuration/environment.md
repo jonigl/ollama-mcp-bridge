@@ -1,3 +1,8 @@
+---
+title: "Environment variables reference"
+description: "Configure Ollama MCP Bridge with OLLAMA_URL, UPSTREAM_HEADERS, MAX_TOOL_ROUNDS, SYSTEM_PROMPT, CORS_ORIGINS and OLLAMA_PROXY_TIMEOUT."
+---
+
 # Environment variables
 
 All of these can be set in the environment; most have a CLI equivalent, and

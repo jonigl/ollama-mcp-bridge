@@ -1,3 +1,8 @@
+---
+title: "Credits"
+description: "Where Ollama MCP Bridge came from: the MCP client it grew out of, the issue that suggested it and the people behind the idea."
+---
+
 # Credits
 
 Based on the basic MCP client from
