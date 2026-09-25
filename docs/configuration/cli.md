@@ -1,3 +1,8 @@
+---
+title: "CLI options reference"
+description: "Every ollama-mcp-bridge command-line flag: config file, host, port, Ollama URL, upstream headers, max tool rounds, system prompt and more."
+---
+
 # CLI options
 
 ```bash

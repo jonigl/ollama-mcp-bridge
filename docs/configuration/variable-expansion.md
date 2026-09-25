@@ -1,3 +1,8 @@
+---
+title: "Env vars and paths in mcp-config.json"
+description: "Use ${env:VAR} and ${workspaceFolder} in mcp-config.json to keep secrets and machine-specific paths out of your MCP server configuration."
+---
+
 # Variable expansion
 
 Any string value in the config file supports two substitutions.

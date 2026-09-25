@@ -1,5 +1,8 @@
 ---
 title: MCP tools for every Ollama client
+description: >-
+  Ollama MCP Bridge is a drop-in proxy for the Ollama API that adds tools from
+  MCP servers to every /api/chat request and runs the tool-calling loop for you.
 template: home.html
 hide:
   - navigation

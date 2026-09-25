@@ -1,3 +1,8 @@
+---
+title: "Running the tests"
+description: "Run the Ollama MCP Bridge test suite with pytest: the unit tests CI runs, and the integration suite against a live bridge and Ollama server."
+---
+
 # Testing
 
 ```bash

@@ -1,3 +1,8 @@
+---
+title: "Run with Docker and Docker Compose"
+description: "Run Ollama MCP Bridge from the multi-arch GHCR image (amd64, arm64) with Docker or Docker Compose, and make MCP server commands work inside the container."
+---
+
 # Docker
 
 Pre-built multi-arch images for `linux/amd64` and `linux/arm64` are published to the

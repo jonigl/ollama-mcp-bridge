@@ -1,3 +1,8 @@
+---
+title: "Quick start: MCP tools in Ollama"
+description: "Start Ollama, write an mcp-config.json, run the bridge and send your first tool-calling chat request from any Ollama client in a few minutes."
+---
+
 # Quick start
 
 Three things have to be in place: Ollama running, a config file with at least one MCP

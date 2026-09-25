@@ -1,3 +1,8 @@
+---
+title: "Filter MCP tools per server"
+description: "Use toolFilter in mcp-config.json to include or exclude specific MCP tools per server, so Ollama models only see the tools you want them to call."
+---
+
 # Tool filtering
 
 By default every tool a server exposes is offered to the model. `toolFilter` narrows

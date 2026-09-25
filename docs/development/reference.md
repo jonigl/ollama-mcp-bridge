@@ -1,3 +1,8 @@
+---
+title: "Python code reference"
+description: "API documentation generated from the docstrings of the ollama_mcp_bridge package: CLI, FastAPI app, lifecycle, proxy service, MCP manager and utils."
+---
+
 # Code reference
 
 Generated from the docstrings in `src/ollama_mcp_bridge/`. For the narrative version of

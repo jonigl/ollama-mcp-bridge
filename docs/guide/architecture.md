@@ -1,3 +1,8 @@
+---
+title: "Architecture and internals"
+description: "Inside Ollama MCP Bridge: the Typer CLI, FastAPI lifespan, routes, the streaming and non-streaming tool-calling loop, and the MCP manager."
+---
+
 # Architecture
 
 ```mermaid

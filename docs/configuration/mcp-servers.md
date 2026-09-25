@@ -1,3 +1,8 @@
+---
+title: "Configure MCP servers (stdio, SSE, HTTP)"
+description: "Declare MCP servers in mcp-config.json for Ollama: stdio commands, SSE and StreamableHTTP URLs, headers, tool naming, relative paths and failure handling."
+---
+
 # MCP servers
 
 MCP servers are declared under `mcpServers` in your config file — `mcp-config.json` by

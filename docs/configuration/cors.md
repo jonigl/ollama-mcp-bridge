@@ -1,3 +1,8 @@
+---
+title: "CORS for browser clients"
+description: "Set CORS_ORIGINS so browser-based chat UIs and web apps can call Ollama MCP Bridge directly: allow one origin, several, or all of them."
+---
+
 # CORS
 
 Cross-Origin Resource Sharing is configured with the `CORS_ORIGINS` environment
