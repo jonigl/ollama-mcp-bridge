@@ -24,14 +24,15 @@
       <div class="omb-hero__content">
         <img
           class="omb-hero__mark"
-          src="{{ 'assets/logo-circle.png' | url }}"
+          src="{{ 'assets/logo-circle.webp' | url }}"
           alt="Ollama MCP Bridge"
-          width="1024"
-          height="1024"
+          width="320"
+          height="320"
+          fetchpriority="high"
           draggable="false"
         >
         <p class="omb-hero__eyebrow">MCP × Ollama</p>
-        <h1>Your Ollama clients just learned to use tools.</h1>
+        <h1>Your Ollama clients just learned to use MCP tools.</h1>
         <p class="omb-hero__lede">
           {{ config.site_description }}
           Point any Ollama SDK at the bridge — the tool-calling loop runs
@@ -144,4 +145,11 @@ client = Client(host=<span class="s">"http://localhost:8000"</span>)
 
     </div>
   </section>
+{% endblock %}
+
+{#- The hero carries the page's only <h1>. Material's content partial would add
+    a second one from the nav title ("Home") because index.md has none, so the
+    body is rendered bare here instead of hiding that heading with CSS. -#}
+{% block content %}
+  {{ page.content }}
 {% endblock %}

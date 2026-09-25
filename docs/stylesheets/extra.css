@@ -70,9 +70,9 @@
   display: none;
 }
 
-/* The disc is baked into the asset itself (docs/assets/logo-circle.png, built
-   from misc/ollama-mcp-bridge-logo-512.png with a transparent circular alpha).
-   Doing it in the image rather than in CSS avoids the trap that a border-radius
+/* The disc is baked into the asset itself (misc/ollama-mcp-bridge-logo-circle.png,
+   built from misc/ollama-mcp-bridge-logo-512.png with a transparent circular
+   alpha; the site serves docs/assets/logo-circle.webp, a 320px copy). Doing it in the image rather than in CSS avoids the trap that a border-radius
    on an <img> makes the browser clip the artwork to a circle inscribed in its
    content box, which shears a square logo and cuts into the wordmark. */
 .omb-hero__mark {
@@ -112,14 +112,8 @@ body:has(.omb-hero) .md-main__inner {
   }
 }
 
-/* The hero already carries the page heading, so drop the one Material
-   injects from the nav title, along with the edit affordance. */
-body:has(.omb-hero) .md-content__inner > h1,
-body:has(.omb-hero) .md-content__button {
-  display: none;
-}
-
-/* Close the gap the hidden heading leaves behind. */
+/* home.html renders the body without Material's heading and edit button,
+   so close the gap they would have filled. */
 body:has(.omb-hero) .md-content__inner {
   padding-top: 0;
 }
