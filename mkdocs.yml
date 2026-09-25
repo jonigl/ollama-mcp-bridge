@@ -67,9 +67,10 @@ theme:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/hero-scene.css
 
 extra_javascript:
-  - javascripts/hero-parallax.js
+  - javascripts/hero-scene.js
   - javascripts/hero-copy.js
 
 markdown_extensions:
