@@ -112,6 +112,14 @@ markdown_extensions:
 
 plugins:
   - search
+  # Serve fonts and scripts from the site itself: Google Fonts and the scripts
+  # Material's bundle loads from unpkg (Mermaid, the ResizeObserver polyfill)
+  # are downloaded at build time. The polyfill URL has no .js suffix, so the
+  # default pattern for scripts is widened to catch it.
+  - privacy:
+      assets_expr_map:
+        .js: >-
+          ["'](?P<url>(?:https?:)?//(?:[^"']+\.(?:css|js(?:on)?)|unpkg\.com/resize-observer-polyfill))["']
   # Open Graph / Twitter tags plus a 1200x630 preview card per page. Needs the
   # Cairo system library, so it only runs where CI is set (GitHub Actions sets
   # it); run `CI=true mkdocs build` to render the cards locally.
