@@ -21,3 +21,6 @@ temp/
 
 # MkDocs build output
 site/
+
+# Social cards and other MkDocs plugin caches
+.cache/

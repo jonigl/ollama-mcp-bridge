@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{#- MkDocs' own sitemap, except <lastmod> comes from the last git commit that
+    touched the page (git-revision-date-localized) instead of the build date,
+    which stamps every page as changed on every deploy. -#}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{%- for file in pages -%}
+    {% if not file.page.is_link and (file.page.abs_url or file.page.canonical_url) %}
+    <url>
+         <loc>{% if file.page.canonical_url %}{{ file.page.canonical_url|e }}{% else %}{{ file.page.abs_url|e }}{% endif %}</loc>
+         {% set modified = file.page.meta.git_revision_date_localized_raw_iso_date or file.page.update_date %}
+         {%- if modified %}<lastmod>{{ modified }}</lastmod>{% endif %}
+    </url>
+    {%- endif -%}
+{% endfor %}
+</urlset>

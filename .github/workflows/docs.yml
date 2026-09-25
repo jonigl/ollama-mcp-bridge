@@ -59,6 +59,12 @@ jobs:
             exit 1
           fi
 
+      # The social plugin draws the preview cards with Cairo. Usually present
+      # on the runner image already; installing it keeps the build from
+      # depending on that.
+      - name: Install Cairo for social cards
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
+
       - name: Build the site
         run: uv run --group docs mkdocs build --strict
 
