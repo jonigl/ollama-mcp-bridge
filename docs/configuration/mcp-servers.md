@@ -95,3 +95,12 @@ tool name.
 Each server is connected inside its own exit stack, which is only merged into the
 bridge's on success. A server that fails to start is logged and skipped — the rest still
 come up, and the bridge serves whatever tools it managed to collect.
+
+## Optional web search example
+
+The repository includes a runnable
+[Parallel Search example](https://github.com/jonigl/ollama-mcp-bridge/tree/main/examples/parallel-search)
+with a separate configuration, setup instructions, and a chat request. It connects
+to a remote StreamableHTTP MCP server for free, keyless web search and URL fetching.
+Enable it explicitly with `--config examples/parallel-search/mcp-config.json`,
+or copy its server entry into your own config to retain your other servers.

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "parallel": {
+      "url": "https://search.parallel.ai/mcp",
+      "headers": {
+        "User-Agent": "ollama-mcp-bridge"
+      },
+      "toolFilter": {
+        "mode": "include",
+        "tools": ["web_search", "web_fetch"]
+      }
+    }
+  }
+}
