@@ -51,7 +51,8 @@ jobs:
       - name: Check code formatting with Black
         run: uv run black --check src/ tests/
 
-  test:
+  unit-tests:
+    name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -75,3 +76,14 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest tests/ --ignore=tests/test_api.py -v
+
+  # Single, stable check name for the "main" ruleset, which requires "test".
+  # It runs even when a matrix leg fails (always()), so a failure is reported
+  # as failed rather than skipped — a skipped required check would count as passing.
+  test:
+    needs: unit-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check unit test results
+        run: test "${{ needs.unit-tests.result }}" = "success"
