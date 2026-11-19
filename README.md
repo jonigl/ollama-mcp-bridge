@@ -76,7 +76,7 @@
 
 ## Requirements
 
-- Python >= 3.10.15
+- Python >= 3.11
 - Ollama server running (local or remote)
 - MCP server configuration file with at least one MCP server defined (see below for example)
 

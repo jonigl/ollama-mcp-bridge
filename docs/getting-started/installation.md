@@ -1,13 +1,13 @@
 ---
 title: "Install with uv, pip or uvx"
-description: "Install Ollama MCP Bridge with uv, pip or uvx on Python 3.10+, check the installed version and get ready to connect Ollama to MCP servers."
+description: "Install Ollama MCP Bridge with uv, pip or uvx on Python 3.11+, check the installed version and get ready to connect Ollama to MCP servers."
 ---
 
 # Installation
 
 ## Requirements
 
-- Python **3.10** or newer
+- Python **3.11** or newer
 - An **Ollama server** running, local or remote
 - An **MCP configuration file** with at least one server defined — see
   [MCP servers](../configuration/mcp-servers.md)

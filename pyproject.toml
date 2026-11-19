@@ -3,20 +3,20 @@ name = "ollama-mcp-bridge"
 dynamic = ["version"]
 description = "Bridge API service connecting Ollama with Model Context Protocol (MCP) servers"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 keywords = ["mcp", "ollama", "bridge", "proxy", "api", "fastapi", "ai", "tools", "llm", "model-context-protocol", "local-llm", "ollama-api", "ollama-mcp"]
 authors = [
   { name = "Jonathan Gastón Löwenstern" },
 ]
 dependencies = [
-    "fastapi~=0.119.0",
+    "fastapi>=0.119,<0.200",
     "httpx~=0.28.0",
     "loguru~=0.7.3",
-    "mcp>=1.9.4,<2.0.0",
+    "mcp>=1.30.0,<2.0.0",
     "packaging>=25.0",
-    "typer~=0.24.0",
-    "uvicorn>=0.38,<0.45",
+    "typer>=0.24,<0.30",
+    "uvicorn>=0.38,<0.55",
 ]
 
 [project.urls]
@@ -54,7 +54,7 @@ docs = [
 
 [tool.black]
 line-length = 120
-target-version = ["py310"]
+target-version = ["py311"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
