@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.15'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -51,15 +51,20 @@ jobs:
       - name: Check code formatting with Black
         run: uv run black --check src/ tests/
 
-  test:
+  unit-tests:
+    name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -71,3 +76,14 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest tests/ --ignore=tests/test_api.py -v
+
+  # Single, stable check name for the "main" ruleset, which requires "test".
+  # It runs even when a matrix leg fails (always()), so a failure is reported
+  # as failed rather than skipped — a skipped required check would count as passing.
+  test:
+    needs: unit-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check unit test results
+        run: test "${{ needs.unit-tests.result }}" = "success"
